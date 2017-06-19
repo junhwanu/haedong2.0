@@ -9,6 +9,7 @@ all_logger = None
 def init(path):
     global res_logger, info_logger, all_logger
 
+    print(path)
     path = path + '/logs/'
     now = time.localtime()
     today = "%04d%02d%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
