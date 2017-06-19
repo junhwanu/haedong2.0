@@ -9,8 +9,10 @@ class Log():
     all_file = ""
     info_file = ""
 
+
     res_logger = None
     info_logger = None
+
 
     def init(self, path):
 
@@ -61,5 +63,3 @@ class Log():
         self.res_logger = logging.getLogger('result_logger')
         self.info_logger = logging.getLogger('info_logger')
         return self.info_logger, self.res_logger
-
-
