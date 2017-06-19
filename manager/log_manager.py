@@ -56,7 +56,7 @@ class Log():
         self.res_logger.addHandler(all_fileHandler)
         self.res_logger.addHandler(res_streamHandler)
 
-        self.info_logger.setLevel(logging.INFO)
+        self.info_logger.setLevel(logging.DEBUG)
         self.res_logger.setLevel(logging.INFO)
 
     def get_logger(self):

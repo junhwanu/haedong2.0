@@ -10,25 +10,24 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/viewer');
 
 import log_manager
-import constant
+import constant as const
 import kiwoom
 
 if __name__ == "__main__":
 
     logger = log_manager.Log()
-    logger.init(constant.MAIN_DIR)
+    logger.init(const.MAIN_DIR)
     log, res = logger.get_logger()
 
     log.info("실제투자(1), 테스트(2)")
-
     while(True):
-        constant.MODE = int(input())
+        const.MODE = int(input())
 
-        if constant.MODE is constant.REAL:
+        if const.MODE is const.REAL:
             kw_api = kiwoom.Api()
 
             break
-        elif constant.MODE is constant.TEST:
+        elif const.MODE is const.TEST:
             break
 
         print("다시 입력해주세요.")

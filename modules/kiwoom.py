@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys, time, os
 
-import constant
+import constant as const
 import screen
 import util
 import subject
@@ -24,7 +24,7 @@ class Api():
         global log, res
         log, res = log_manager.Log().get_logger()
 
-        if constant.MODE is constant.REAL:
+        if const.MODE is const.REAL:
             log.info("해동이2.0 실제투자 시작 합니다.")
             self.app = QApplication(sys.argv)
             self.ocx = QAxWidget("KFOPENAPI.KFOpenAPICtrl.1")
@@ -32,15 +32,17 @@ class Api():
             self.ocx.OnReceiveTrData[str, str, str, str, str].connect(self.OnReceiveTrData)
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
+
+            rq_thread.init(self.ocx)
             if self.connect() == 0:
                 self.app.exec_()
 
 
-        elif constant.MODE is constant.TEST:
+        elif const.MODE is const.TEST:
             pass
 
         else:
-            print("MODE:"+str(constant.MODE))
+            log.info("MODE:"+str(const.MODE))
 
 
     ####################################################
@@ -126,7 +128,7 @@ class Api():
 
 
         :param sRQName: 사용자 구분 요청 명
-        :param sScreenNo: 화면번호[4]
+        :param sScreenNo: 화면번호[ㄱ4]
         :param sAccNo: 계좌번호[10]
         :param nOrderType: 주문유형 (1:신규매수, 2:신규매도, 3:매수취소, 4:매도취소, 5:매수정정, 6:매 도정정)
         :param sCode: 주식종목코드
@@ -159,11 +161,11 @@ class Api():
         else:
             return -300
 
-        if MODE is REAL:
+        if const.MODE is const.REAL:
             return self.ocx.dynamicCall(
                 "SendOrder(QString, QString, QString, int, QString, int, QString, QString, QString, QString)",
                 [contract_type, '0101', self.account, _contract_type, subject_code, contract_cnt, '0', '0', '1', ''])
-        elif MODE is TEST: # 테스트
+        elif const.MODE is const.TEST: # 테스트
             #tester.send_order(contract_type, subject_code, contract_cnt, '1')
             return 0
 
@@ -193,7 +195,13 @@ class Api():
         Ex) openApi.SetInputValue(“종목코드”, “000660”);
             openApi.SetInputValue(“계좌번호”, “5015123401”);
         """
-        self.ocx.dynamicCall("SetInputValue(QString, QString)", sID, sValue)
+        try:
+            log.debug("set_input_value(), sID: %s, sValue: %s" % (sID, sValue))
+            #req = rq_thread.get_instance(self.ocx)
+            #req.set_input_value(sID, sValue)
+            rq_thread.set_input_value(sID, sValue)
+        except Exception as err:
+            log.error(err)
 
     def comm_rq_data(self, sRQName, sTrCode, nPrevNext, sScreenNo):
         """
@@ -211,10 +219,10 @@ class Api():
         OP_ERR_NONE(0) – 정상처리
         """
         try:
-            req = rq_thread.get_instance(self.ocx)
-            req.push(sRQName, sTrCode, nPrevNext, sScreenNo)
-            if req.is_alive() is False:
-                req.start()
+            log.debug("comm_rq_data(), sRQName: %s, sTrCode: %s, nPrevNext: %s, sScreenNo: %s" % (sRQName, sTrCode, nPrevNext, sScreenNo))
+            rq_thread.push(sRQName, sTrCode, nPrevNext, sScreenNo)
+            #req = rq_thread.get_instance(self.ocx)
+            #req.push(sRQName, sTrCode, nPrevNext, sScreenNo)
         except Exception as err:
             log.error(err)
 
@@ -290,7 +298,7 @@ class Api():
             self.account = self.get_login_info("ACCNO")
             log.info("계좌번호 : " + self.account)
 
-            if MODE is REAL:
+            if const.MODE is const.REAL:
                 # 다이나믹 종목 정보 요청
                 self.get_dynamic_subject_code()
                 self.get_futures_deposit()
