@@ -23,8 +23,10 @@ class Api():
             self.ocx.OnReceiveTrData[str, str, str, str, str].connect(self.OnReceiveTrData)
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
+            if self.connect() == 0:
 
-            self.app.exec_()
+                self.app.exec_()
+
 
         elif MODE is TEST:
             pass
