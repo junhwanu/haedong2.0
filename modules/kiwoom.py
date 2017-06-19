@@ -13,7 +13,6 @@ from PyQt5.QtWidgets import QApplication
 log = None
 res = None
 
-
 class Api():
 
     app = None
