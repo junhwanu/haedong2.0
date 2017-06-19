@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
-import threading, time
+import threading, time, sys
 import log_manager
 
 rq_thread = None
 input_value = []
 rq_list = []
+ocx = None
+log, res = log_manager.Log().get_logger()
 
-def init(ocx):
-    global rq_thread
+def init(_ocx):
+    global rq_thread, ocx, log, res
 
     try:
+        ocx = _ocx
         if rq_thread is None:
-            rq_thread = Request_thread(ocx)
-            rq_thread.daemon = True
-            rq_thread.start()
+            rq_thread = Request_thread(_ocx)
+            pass
 
+        log.debug("init ocx is %s" % ocx)
         return rq_thread
     except Exception as err:
         log.error(err)
@@ -26,7 +29,7 @@ def set_input_value(sID, sValue):
     log.debug("input value : %s" % input_value)
 
 def push(sRQName, sTrCode, nPrevNext, sScreenNo):
-    global rq_list, input_value
+    global rq_list, input_value, rq_thread, log, res
     try:
         log.debug("push, input value : %s" % input_value)
         rq_list.append({
@@ -37,7 +40,17 @@ def push(sRQName, sTrCode, nPrevNext, sScreenNo):
                         "sScreenNo":sScreenNo})
 
         input_value = []
-        if not rq_thread.is_alive(): rq_thread.run()
+
+        log.debug("Request thread is alive? %s" % rq_thread.is_alive())
+        if not rq_thread.is_alive():
+            log.debug("new ocx is %s" % ocx)
+            rq_thread = Request_thread(ocx)
+            log.debug(str(rq_thread.ident) + " new thread created.")
+            #rq_thread.daemon = True
+            log.debug("set daemon.")
+            #rq_thread.run()
+            log.debug("thread start.")
+            pass
 
     except Exception as err:
         log.error(err)
@@ -51,7 +64,10 @@ class Request_thread(threading.Thread):
         log, res = log_manager.Log().get_logger()
 
         self.ocx = ocx
-        #self.rq_list = []
+
+        thread = threading.Thread(target=self.run, args=())
+        thread.daemon = True                            # Daemonize thread
+        thread.run()                                  # Start the execution
 
     '''
     def set_input_value(self, sID, sValue):
@@ -77,14 +93,17 @@ class Request_thread(threading.Thread):
             while len(rq_list) > 0:
                 req = rq_list[0]
 
-                log.debug("run() req : %s" % req)
+                log.debug("run() function start")
 
                 for input_value in req["inputValue"]:
                     log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
                     self.ocx.dynamicCall("SetInputValue(QString, QString)", input_value[0], input_value[1])
 
+                log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
+                log.debug("req : %s" % req)
                 rtn = self.ocx.dynamicCall("CommRqData(QString, QString, QString, QString)", req['sRQName'], req['sTrCode'], req['nPrevNext'], req['sScreenNo'])
 
+                log.debug("ocx.dynamicCall return value : %s" % rtn)
                 if rtn == 0:
                     rq_list.pop(0);
                 else:
@@ -97,7 +116,12 @@ class Request_thread(threading.Thread):
                     elif rtn == -301:
                         # 계좌비밀번호 입력
                         pass
-                time.sleep(10)
+
+                time.sleep(0.3)
+                log.debug("end run() function")
+
+            log.debug("terminate request thread.");
+
         except Exception as err:
             log.error(err)
 
