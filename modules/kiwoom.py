@@ -1,33 +1,46 @@
 # -*- coding: utf-8 -*-
-import sys, time
-import log_manager as log
-from constant import *
+import sys, time, os
+
+import constant
 import screen
 import util
 import subject
 import request_thread as rq_thread
-
+import log_manager
 from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtWidgets import QApplication
 
+log = None
+res = None
+
 class Api():
+
     app = None
     account = ""
 
     def __init__(self):
+
         super(Api, self).__init__()
-        if MODE is REAL:
+        global log, res
+        log, res = log_manager.Log().get_logger()
+
+        if constant.MODE is constant.REAL:
+            log.info("해동이2.0 실제투자 시작 합니다.")
             self.app = QApplication(sys.argv)
             self.ocx = QAxWidget("KFOPENAPI.KFOpenAPICtrl.1")
             self.ocx.OnEventConnect[int].connect(self.OnEventConnect)
             self.ocx.OnReceiveTrData[str, str, str, str, str].connect(self.OnReceiveTrData)
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
+            if self.connect() == 0:
+                self.app.exec_()
 
-            self.app.exec_()
 
-        elif MODE is TEST:
+        elif constant.MODE is constant.TEST:
             pass
+
+        else:
+            print("MODE:"+str(constant.MODE))
 
 
     ####################################################
