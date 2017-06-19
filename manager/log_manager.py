@@ -3,7 +3,6 @@ import shutil, time, sys, os
 import logging
 import logging.handlers
 
-
 class Log():
 
     res_file = ""
