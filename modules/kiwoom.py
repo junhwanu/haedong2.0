@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys, time, os
+
 import constant
 import screen
 import util
