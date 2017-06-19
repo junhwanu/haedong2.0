@@ -197,8 +197,6 @@ class Api():
         """
         try:
             log.debug("set_input_value(), sID: %s, sValue: %s" % (sID, sValue))
-            #req = rq_thread.get_instance(self.ocx)
-            #req.set_input_value(sID, sValue)
             rq_thread.set_input_value(sID, sValue)
         except Exception as err:
             log.error(err)
@@ -221,8 +219,6 @@ class Api():
         try:
             log.debug("comm_rq_data(), sRQName: %s, sTrCode: %s, nPrevNext: %s, sScreenNo: %s" % (sRQName, sTrCode, nPrevNext, sScreenNo))
             rq_thread.push(sRQName, sTrCode, nPrevNext, sScreenNo)
-            #req = rq_thread.get_instance(self.ocx)
-            #req.push(sRQName, sTrCode, nPrevNext, sScreenNo)
         except Exception as err:
             log.error(err)
 
@@ -232,7 +228,7 @@ class Api():
         QApplication.quit()
         sys.exit()
 
-        ####################################################
+    ####################################################
 
     # Control Event Handlers
     ####################################################
@@ -312,39 +308,6 @@ class Api():
             c_time = "%02d%02d" % (time.localtime().tm_hour, time.localtime().tm_min)
 
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            log.critical(self.parse_error_code(nErrCode))
+            log.critical(rq_thread.parse_error_code(nErrCode))
 
             self.quit()
-
-    ####################################################
-    # Custom Methods
-    ####################################################
-
-    @staticmethod
-    def parse_error_code(err_code):
-        """
-        Return the message of error codes
-
-        :param err_code: Error Code
-        :type err_code: str
-        :return: Error Message
-        """
-        err_code = str(err_code)
-        ht = {
-            "0": "정상처리",
-            "-100": "사용자정보교환에 실패하였습니다. 잠시후 다시 시작하여 주십시오.",
-            "-101": "서버 접속 실패",
-            "-102": "버전처리가 실패하였습니다.",
-            "-200": "시세조회 과부하",
-            "-201": "REQUEST_INPUT_st Failed",
-            "-202": "요청 전문 작성 실패",
-            "-300": "주문 입력값 오류",
-            "-301": "계좌비밀번호를 입력하십시오.",
-            "-302": "타인계좌는 사용할 수 없습니다.",
-            "-303": "주문가격이 20억원을 초과합니다.",
-            "-304": "주문가격은 50억원을 초과할 수 없습니다.",
-            "-305": "주문수량이 총발행주수의 1%를 초과합니다.",
-            "-306": "주문수량은 총발행주수의 3%를 초과할 수 없습니다."
-        }
-        return ht[err_code] + " (%s)" % err_code if err_code in ht else err_code
-
