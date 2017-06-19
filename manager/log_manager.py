@@ -54,6 +54,7 @@ class Log():
         self.res_logger.addHandler(res_fileHandler)
         self.res_logger.addHandler(all_fileHandler)
         self.res_logger.addHandler(res_streamHandler)
+
         self.info_logger.setLevel(logging.INFO)
         self.res_logger.setLevel(logging.INFO)
 
