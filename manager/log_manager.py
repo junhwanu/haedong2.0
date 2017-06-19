@@ -1,86 +1,66 @@
 # -*- coding: utf-8 -*-
 import shutil, time, sys, os
 import logging
-
-res_logger = None
-info_logger = None
-all_logger = None
-
-def init(path):
-    global res_logger, info_logger, all_logger
-
-    path = path + '/logs/'
-    now = time.localtime()
-    today = "%04d%02d%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
-
-    res_file = path + "/" + today + "_result.txt"
-    all_file = path + "/" + today + "_all.txt"
-    info_file = path + "/" + today + "_info.txt"
-
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    if os.path.isfile(res_file) == False:
-        file = open(res_file, 'w')
-        file.close()
-
-    if os.path.isfile(all_file) == False:
-        file = open(all_file, 'w')
-        file.close()
-
-    if os.path.isfile(info_file) == False:
-        file = open(info_file, 'w')
-        file.close()
-
-    res_logger = logging.getLogger('result_logger')
-    info_logger = logging.getLogger('info_logger')
-    all_logger = logging.getLogger('all_logger')
-
-    DATE_FORMAT = "%b %d %H:%M:%S"
-    LOG_FORMAT = "%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) %(message)s"
-    fomatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
-
-    all_fileHandler = logging.FileHandler(all_file, encoding='utf-8')
-    all_streamHandler = logging.StreamHandler()
-
-    all_fileHandler.setFormatter(fomatter)
-    all_streamHandler.setFormatter(fomatter)
-
-    res_fileHandler = logging.FileHandler(res_file, encoding='utf-8')
-    res_fileHandler.setFormatter(fomatter)
-
-    info_fileHandler = logging.FileHandler(info_file, encoding='utf-8')
-    info_fileHandler.setFormatter(fomatter)
-
-    info_logger.addHandler(info_fileHandler)
-    res_logger.addHandler(res_fileHandler)
-    all_logger.addHandler(all_fileHandler)
-    all_logger.addHandler(all_streamHandler)
-    all_logger.setLevel(logging.DEBUG)
-    info_logger.setLevel(logging.INFO)
-    res_logger.setLevel(logging.INFO)
+import logging.handlers
 
 
-def info(log_msg):
-    all_logger.info(log_msg)
-    info_logger.info(log_msg)
+class Log():
 
-def debug(log_msg):
-    all_logger.debug(log_msg)
-    info_logger.info(log_msg)
+    res_file = ""
+    all_file = ""
+    info_file = ""
 
-def warning(log_msg):
-    all_logger.warning(log_msg)
-    info_logger.info(log_msg)
+    res_logger = None
+    info_logger = None
 
-def error(log_msg):
-    all_logger.error(log_msg)
-    info_logger.info(log_msg)
+    def init(self, path):
 
-def critical(log_msg):
-    all_logger.critical(log_msg)
-    info_logger.info(log_msg)
+        path = path + '/logs/'
 
-def result(log_msg):
-    all_logger.info(log_msg)
-    res_logger.info(log_msg)
+        now = time.localtime()
+        today = "%04d%02d%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
+
+        self.res_file = path + "/" + today + "_result.txt"
+        self.all_file = path + "/" + today + "_all.txt"
+        self.info_file = path + "/" + today + "_info.txt"
+
+        if not os.path.exists(path):
+            os.makedirs(path)
+
+        self.res_logger = logging.getLogger('result_logger')
+        self.info_logger = logging.getLogger('info_logger')
+
+        DATE_FORMAT = "%b %d %H:%M:%S"
+        LOG_FORMAT = "%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) %(message)s"
+        fomatter = logging.Formatter(LOG_FORMAT, DATE_FORMAT)
+
+        all_fileHandler = logging.FileHandler(self.all_file, encoding='utf-8')
+        all_fileHandler.setFormatter(fomatter)
+
+        res_fileHandler = logging.FileHandler(self.res_file, encoding='utf-8')
+        res_fileHandler.setFormatter(fomatter)
+        res_streamHandler = logging.StreamHandler()
+        res_streamHandler.setFormatter(fomatter)
+
+        info_fileHandler = logging.FileHandler(self.info_file, encoding='utf-8')
+        info_fileHandler.setFormatter(fomatter)
+        info_streamHandler = logging.StreamHandler()
+        info_streamHandler.setFormatter(fomatter)
+
+        self.info_logger.addHandler(info_fileHandler)
+        self.info_logger.addHandler(all_fileHandler)
+        self.info_logger.addHandler(info_streamHandler)
+
+        self.res_logger.addHandler(res_fileHandler)
+        self.res_logger.addHandler(all_fileHandler)
+        self.res_logger.addHandler(res_streamHandler)
+
+        self.info_logger.setLevel(logging.INFO)
+        self.res_logger.setLevel(logging.INFO)
+
+    def get_logger(self):
+        self.res_logger = logging.getLogger('result_logger')
+        self.info_logger = logging.getLogger('info_logger')
+        return self.info_logger, self.res_logger
+
+
