@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys, time, os
+import sys, time, threading, queue
 
 import constant as const
 import screen
@@ -7,19 +7,41 @@ import util
 import subject
 import request_thread as rq_thread
 import log_manager
-from PyQt5.QAxContainer import QAxWidget
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QAxContainer import *
+from PyQt5.QtWidgets import *
 
 log = None
 res = None
 
-class Api():
+class Req:
+    def __init__(self, fn, *args, **kwargs):
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
 
+    def __call__(self):
+        return self.fn(*self.args, **self.kwargs)
+
+class Singleton:
+    __instance = None
+
+    @classmethod
+    def __get_instance(cls):
+        return cls.__instance
+
+    @classmethod
+    def instance(cls, *args, **kargs):
+        cls.__instance = cls(*args, **kargs)
+        cls.instance = cls.__get_instance
+        return cls.__instance
+
+class Api(Singleton):
+    input_value = []
+    rq_config = []
     app = None
     account = ""
 
     def __init__(self):
-
         super(Api, self).__init__()
         global log, res
         log, res = log_manager.Log().get_logger()
@@ -33,7 +55,16 @@ class Api():
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
-            rq_thread.init(self.ocx)
+            #rq_thread.init(self.ocx)
+
+            # 5개 이상 종목의 주문 처리를 위한 큐, 쓰레드
+            log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
+            self.req_queue = queue.Queue()
+            t = threading.Thread(target=self.basic_worker)
+            t.daemon = True
+            t.start()
+            self.req_queue.join()
+
             if self.connect() == 0:
                 self.app.exec_()
 
@@ -44,6 +75,12 @@ class Api():
         else:
             log.info("MODE:"+str(const.MODE))
 
+    def basic_worker(self):
+        while True:
+            f = self.req_queue.get()
+            f()
+            time.sleep(0.2)  # 0.2초 대기. 1초에 주문 5개 이상이면 오류
+            self.req_queue.task_done()
 
     ####################################################
     # Interface Methods
@@ -186,6 +223,23 @@ class Api():
         rqTag = "해외선물옵션분차트조회" + "_" + subject_code + "_" + tick_unit
         self.comm_rq_data(rqTag, "opc10002", prevNext, subject.info[subject_code]['화면번호'])
 
+    def send_request(self, config):
+        log.debug("send_request(), config : %s" % config)
+        log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
+        for input_value in config["InputValue"]:
+            log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
+            self.ocx.dynamicCall("SetInputValue(QString, QString)", input_value[0], input_value[1])
+
+        rtn = self.ocx.dynamicCall("CommRqData(QString, QString, QString, QString)", config['sRQName'], config['sTrCode'], config['nPrevNext'], config['sScreenNo'])
+        log.debug("send_request(), rtn value : %s" % rtn)
+
+        if rtn == 0:
+            pass
+        else:
+            log.error(self.parse_error_code(rtn))
+            self.req_queue.put(self.send_request, config)
+
+
     def set_input_value(self, sID, sValue):
         """
         Tran 입력 값을 서버통신 전에 입력한다.
@@ -197,7 +251,8 @@ class Api():
         """
         try:
             log.debug("set_input_value(), sID: %s, sValue: %s" % (sID, sValue))
-            rq_thread.set_input_value(sID, sValue)
+            #rq_thread.set_input_value(sID, sValue)
+            self.input_value.append([sID, sValue])
         except Exception as err:
             log.error(err)
 
@@ -218,7 +273,16 @@ class Api():
         """
         try:
             log.debug("comm_rq_data(), sRQName: %s, sTrCode: %s, nPrevNext: %s, sScreenNo: %s" % (sRQName, sTrCode, nPrevNext, sScreenNo))
-            rq_thread.push(sRQName, sTrCode, nPrevNext, sScreenNo)
+            #rq_thread.push(sRQName, sTrCode, nPrevNext, sScreenNo)
+            request_config = {"InputValue": self.input_value,
+                              "sRQName": sRQName,
+                              "sTrCode": sTrCode,
+                              "nPrevNext": nPrevNext,
+                              "sScreenNo": sScreenNo}
+
+            req = Req(self.send_request, request_config)
+            self.req_queue.put(req)
+
         except Exception as err:
             log.error(err)
 
@@ -248,9 +312,22 @@ class Api():
         :param sMessage: 1.0.0.1 버전 이후 사용하지 않음.
         :param sSplmMsg: 1.0.0.1 버전 이후 사용하지 않음.
         """
+        log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
         log.info("onReceiveTrData")
 
         try:
+            if sRQName == '상품별현재가조회':
+                log.debug("onRecieveTrData: 상품별현재가조회")
+                for i in range(20):
+                    subject_code = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
+                                                        sRecordName, i, '종목코드n').strip()  # 현재가 = 틱의 종가
+                    subject_symbol = subject_code[:2]
+                    log.debug("상품별현재가조회, 종목코드 : %s" % subject_code)
+                    if subject_symbol in subject.info.keys():
+                        log.info("금일 %s의 종목코드는 %s 입니다." % (subject.info[subject_symbol]["종목명"], subject_code))
+                        subject.info[subject_code] = subject.info[subject_symbol]
+                        del subject.info[subject_symbol]
+
             pass
         except Exception as err:
             log.error(err)
@@ -279,6 +356,7 @@ class Api():
         :param sRealType: 리얼타입
         :param sRealData: 실시간 데이터전문
         """
+        log.info("onReceiveRealData, subject_code: %s, sRealType: %s, sRealData: %s" %(subject_code, sRealType, sRealData))
 
     def OnEventConnect(self, nErrCode):
         """
@@ -311,3 +389,31 @@ class Api():
             log.critical(rq_thread.parse_error_code(nErrCode))
 
             self.quit()
+
+    @staticmethod
+    def parse_error_code(err_code):
+        """
+        Return the message of error codes
+
+        :param err_code: Error Code
+        :type err_code: str
+        :return: Error Message
+        """
+        err_code = str(err_code)
+        ht = {
+            "0": "정상처리",
+            "-100": "사용자정보교환에 실패하였습니다. 잠시후 다시 시작하여 주십시오.",
+            "-101": "서버 접속 실패",
+            "-102": "버전처리가 실패하였습니다.",
+            "-200": "시세조회 과부하",
+            "-201": "REQUEST_INPUT_st Failed",
+            "-202": "요청 전문 작성 실패",
+            "-300": "주문 입력값 오류",
+            "-301": "계좌비밀번호를 입력하십시오.",
+            "-302": "타인계좌는 사용할 수 없습니다.",
+            "-303": "주문가격이 20억원을 초과합니다.",
+            "-304": "주문가격은 50억원을 초과할 수 없습니다.",
+            "-305": "주문수량이 총발행주수의 1%를 초과합니다.",
+            "-306": "주문수량은 총발행주수의 3%를 초과할 수 없습니다."
+        }
+        return ht[err_code] + " (%s)" % err_code if err_code in ht else err_code
