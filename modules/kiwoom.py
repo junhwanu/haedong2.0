@@ -10,6 +10,8 @@ import log_manager
 from log_manager import get_error_msg
 import strategy_var as st
 import chart
+import contract
+import strategy_manager as stm
 from PyQt5.QAxContainer import *
 from PyQt5.QtWidgets import *
 
@@ -386,7 +388,44 @@ class Api():
 
                         elif const.MODE is const.TEST:
                             pass
-            pass
+
+            elif sRQName == '미결제잔고내역조회':
+                '''
+                if self.state == '매매가능': return
+                self.state = '매매가능'
+                order_info = {}
+                order_contents = {}
+                contract_cnt = int(
+                    self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 1,
+                                         '매도수량'))
+
+                if contract_cnt is 0:
+                    contract_cnt = int(
+                        self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 1,
+                                             '매수수량'))
+                    order_contents['매도수구분'] = '신규매수'
+                else:
+                    order_contents['매도수구분'] = '신규매도'
+
+                if contract_cnt is 0: return
+
+                order_info['종목코드'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
+                                                          sRecordName, 0, '종목코드').strip()
+                order_info['신규수량'] = contract_cnt
+                order_info['체결표시가격'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
+                                                            sRecordName, 0, '평균단가').strip()
+                order_contents['익절틱'] = subject.info[order_info['종목코드']]['익절틱']
+                order_contents['손절틱'] = subject.info[order_info['종목코드']]['손절틱']
+
+                contract.add_contract(order_info, order_contents)
+                '''
+
+            elif sRQName == "예수금및증거금현황조회":
+                contract.my_deposit = int(
+                    self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 0,
+                                         '주문가능금액').strip())
+                log.info('예수금 현황 : ' + str(contract.my_deposit))
+
         except Exception as err:
             log.error(get_error_msg(err))
 
@@ -414,18 +453,72 @@ class Api():
         :param sRealType: 리얼타입
         :param sRealData: 실시간 데이터전문
         """
-        log.debug("onReceiveRealData, subject_code: %s, sRealType: %s, sRealData: %s" %(subject_code, sRealType, sRealData))
 
-        ''' Send Request '''
-        current_time = time.time()
-        if current_time - self.last_req_time > 0.25:
-            self.send_request()
-            self.last_req_time = current_time
+        try:
+            current_price = self.ocx.dynamicCall("GetCommRealData(QString, int)", "현재가", 140)  # 140은 현재가의 코드
+            current_time = self.ocx.dynamicCall("GetCommRealData(QString, int)", "체결시간", 20)  # 20은 체결시간의 코드
+            current_price = round(float(current_price), subject.info[subject_code]['자릿수'])
 
-        ''' 계좌번호 비밀번호 입력했는지 체크 '''
-        if current_time - self.last_pwd_check_time > 2:
-            self.get_my_deposit_info()
-            self.last_pwd_check_time = current_time
+            ''' Send Request '''
+            now = time.time()
+            if now - self.last_req_time > 0.25:
+                self.send_request()
+                self.last_req_time = now
+
+            ''' 계좌번호 비밀번호 입력했는지 체크 '''
+            if now- self.last_pwd_check_time > 2:
+                self.get_my_deposit_info()
+                self.last_pwd_check_time = now
+
+            if subject_code not in chart.data:
+                log.error("요청하지 않은 데이터 수신.")
+                return
+
+            ''' 캔들 생성 '''
+            for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+                chart_type = chart_config[0]
+                time_unit = chart_config[1]
+
+                chart_data = chart.data[subject_code][chart_type][time_unit]
+                if chart_type == const.틱차트:
+                    if chart_data['현재가변동횟수'] == 0:
+                        chart_data['현재캔들']['시가'] = current_price
+
+                    chart_data['현재가변동횟수'] += 1
+                    if current_price < chart_data['현재캔들']['저가'] : chart_data['현재캔들']['저가'] = current_price
+                    if current_price > chart_data['현재캔들']['고가']: chart_data['현재캔들']['고가'] = current_price
+
+                    if chart_data['현재가변동횟수'] == time_unit:
+                        chart_data['현재캔들']['체결시간'] = current_time
+                        chart_data['현재캔들']['현재가'] = current_price
+                        chart_data['현재가변동횟수'] = 0
+                        if chart_data['인덱스'] == -1:
+                            chart_data['임시캔들'].append(chart_data['현재캔들'])
+                        else:
+                            chart.push(chart_data['현재캔들'], chart_type, time_unit)
+
+                elif chart_type == const.분차트:
+                    pass
+
+            ''' 계약 청산 '''
+            if contract.get_contract_count(subject_code) > 0:
+                if chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중':
+                    sell_contents = stm.is_it_sell(subject_code, current_price)
+
+                    if sell_contents['신규주문']:
+                        self.send_order(sell_contents['매도수구분'], subject_code, sell_contents['수량'])
+
+            ''' 매매 진입 '''
+            if contract.get_contract_count(subject_code) == 0:
+                if chart.data[subject_code]['상태'] != '매수중' and chart.data[subject_code]['상태'] != '매도중'\
+                        and chart.data[subject_code]['상태'] != '매매시도중' and chart.data[subject_code]['상태'] != '청산시도중':
+                    order_contents = stm.is_it_ok(subject_code, current_price)
+
+                    if order_contents['신규주문']:
+                        self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
+
+        except Exception as err:
+            log.error(get_error_msg(err))
 
     def OnEventConnect(self, nErrCode):
         """
