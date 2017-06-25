@@ -3,6 +3,11 @@ import shutil, time, sys, os
 import logging
 import logging.handlers
 
+def get_error_msg(err):
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    return ("%s %s %s %s" % (err, exc_type, fname, exc_tb.tb_lineno))
+
 class Log():
 
     res_file = ""
@@ -57,7 +62,7 @@ class Log():
         self.res_logger.addHandler(res_streamHandler)
 
         self.info_logger.setLevel(logging.DEBUG)
-        self.res_logger.setLevel(logging.INFO)
+        self.res_logger.setLevel(logging.DEBUG)
 
     def get_logger(self):
         self.res_logger = logging.getLogger('result_logger')
