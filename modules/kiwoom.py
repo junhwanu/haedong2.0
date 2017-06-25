@@ -13,31 +13,11 @@ from PyQt5.QtWidgets import *
 log = None
 res = None
 
-class Req:
-    def __init__(self, fn, *args, **kwargs):
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    def __call__(self):
-        return self.fn(*self.args, **self.kwargs)
-
-class Singleton:
-    __instance = None
-
-    @classmethod
-    def __get_instance(cls):
-        return cls.__instance
-
-    @classmethod
-    def instance(cls, *args, **kargs):
-        cls.__instance = cls(*args, **kargs)
-        cls.instance = cls.__get_instance
-        return cls.__instance
-
-class Api(Singleton):
+class Api():
+    req = []
     input_value = []
-    rq_config = []
+    last_req_time = time.time()
+    last_pwd_check_time = time.time()
     app = None
     account = ""
 
@@ -55,16 +35,6 @@ class Api(Singleton):
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
-            #rq_thread.init(self.ocx)
-
-            # 5개 이상 종목의 주문 처리를 위한 큐, 쓰레드
-            log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
-            self.req_queue = queue.Queue()
-            t = threading.Thread(target=self.basic_worker)
-            t.daemon = True
-            t.start()
-            self.req_queue.join()
-
             if self.connect() == 0:
                 self.app.exec_()
 
@@ -74,13 +44,6 @@ class Api(Singleton):
 
         else:
             log.info("MODE:"+str(const.MODE))
-
-    def basic_worker(self):
-        while True:
-            f = self.req_queue.get()
-            f()
-            time.sleep(0.2)  # 0.2초 대기. 1초에 주문 5개 이상이면 오류
-            self.req_queue.task_done()
 
     ####################################################
     # Interface Methods
@@ -223,21 +186,23 @@ class Api(Singleton):
         rqTag = "해외선물옵션분차트조회" + "_" + subject_code + "_" + tick_unit
         self.comm_rq_data(rqTag, "opc10002", prevNext, subject.info[subject_code]['화면번호'])
 
-    def send_request(self, config):
-        log.debug("send_request(), config : %s" % config)
-        log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
-        for input_value in config["InputValue"]:
-            log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
-            self.ocx.dynamicCall("SetInputValue(QString, QString)", input_value[0], input_value[1])
+    def send_request(self):
+        if len(self.req) > 0:
+            config = self.req[0]
+            log.debug("send_request(), config : %s" % config)
+            log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
+            for input_value in config["InputValue"]:
+                log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
+                self.ocx.dynamicCall("SetInputValue(QString, QString)", input_value[0], input_value[1])
 
-        rtn = self.ocx.dynamicCall("CommRqData(QString, QString, QString, QString)", config['sRQName'], config['sTrCode'], config['nPrevNext'], config['sScreenNo'])
-        log.debug("send_request(), rtn value : %s" % rtn)
+            rtn = self.ocx.dynamicCall("CommRqData(QString, QString, QString, QString)", config['sRQName'], config['sTrCode'], config['nPrevNext'], config['sScreenNo'])
+            log.debug("send_request(), rtn value : %s" % rtn)
 
-        if rtn == 0:
-            pass
-        else:
-            log.error(self.parse_error_code(rtn))
-            self.req_queue.put(self.send_request, config)
+            if rtn == 0:
+                del self.req[0]
+                pass
+            else:
+                log.error(self.parse_error_code(rtn))
 
 
     def set_input_value(self, sID, sValue):
@@ -273,15 +238,13 @@ class Api(Singleton):
         """
         try:
             log.debug("comm_rq_data(), sRQName: %s, sTrCode: %s, nPrevNext: %s, sScreenNo: %s" % (sRQName, sTrCode, nPrevNext, sScreenNo))
-            #rq_thread.push(sRQName, sTrCode, nPrevNext, sScreenNo)
             request_config = {"InputValue": self.input_value,
                               "sRQName": sRQName,
                               "sTrCode": sTrCode,
                               "nPrevNext": nPrevNext,
                               "sScreenNo": sScreenNo}
 
-            req = Req(self.send_request, request_config)
-            self.req_queue.put(req)
+            self.req.append(request_config)
 
         except Exception as err:
             log.error(err)
@@ -356,7 +319,18 @@ class Api(Singleton):
         :param sRealType: 리얼타입
         :param sRealData: 실시간 데이터전문
         """
-        log.info("onReceiveRealData, subject_code: %s, sRealType: %s, sRealData: %s" %(subject_code, sRealType, sRealData))
+        log.debug("onReceiveRealData, subject_code: %s, sRealType: %s, sRealData: %s" %(subject_code, sRealType, sRealData))
+
+        ''' Send Request '''
+        current_time = time.time()
+        if current_time - self.last_req_time > 0.25:
+            self.send_request()
+            self.last_req_time = current_time
+
+        ''' 계좌번호 비밀번호 입력했는지 체크 '''
+        if current_time - self.last_pwd_check_time > 2:
+            self.get_my_deposit_info()
+            self.last_pwd_check_time = current_time
 
     def OnEventConnect(self, nErrCode):
         """
@@ -380,7 +354,6 @@ class Api(Singleton):
 
                 # 종목 정보 로그 찍기
                 log.info("참여 종목 : %s" % subject.info.values())
-
 
         else:
             c_time = "%02d%02d" % (time.localtime().tm_hour, time.localtime().tm_min)
