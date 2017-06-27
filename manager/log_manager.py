@@ -13,11 +13,11 @@ class Log():
     res_file = ""
     all_file = ""
     info_file = ""
-
+    err_file = ""
 
     res_logger = None
     info_logger = None
-
+    err_logger = None
 
     def init(self, path):
 
@@ -29,12 +29,14 @@ class Log():
         self.res_file = path + "/" + today + "_result.txt"
         self.all_file = path + "/" + today + "_all.txt"
         self.info_file = path + "/" + today + "_info.txt"
+        self.err_file = path + "/" + today + "_error.txt"
 
         if not os.path.exists(path):
             os.makedirs(path)
 
         self.res_logger = logging.getLogger('result_logger')
         self.info_logger = logging.getLogger('info_logger')
+        self.err_logger = logging.getLogger('error_logger')
 
         DATE_FORMAT = "%b %d %H:%M:%S"
         LOG_FORMAT = "%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) %(message)s"
@@ -53,6 +55,11 @@ class Log():
         info_streamHandler = logging.StreamHandler()
         info_streamHandler.setFormatter(fomatter)
 
+        err_fileHandler = logging.FileHandler(self.info_file, encoding='utf-8')
+        err_fileHandler.setFormatter(fomatter)
+        err_streamHandler = logging.StreamHandler()
+        err_streamHandler.setFormatter(fomatter)
+
         self.info_logger.addHandler(info_fileHandler)
         self.info_logger.addHandler(all_fileHandler)
         self.info_logger.addHandler(info_streamHandler)
@@ -61,10 +68,17 @@ class Log():
         self.res_logger.addHandler(all_fileHandler)
         self.res_logger.addHandler(res_streamHandler)
 
+        self.err_logger.addHandler(err_fileHandler)
+        self.err_logger.addHandler(all_fileHandler)
+        self.err_logger.addHandler(err_streamHandler)
+
         self.info_logger.setLevel(logging.DEBUG)
         self.res_logger.setLevel(logging.DEBUG)
+        self.err_logger.setLevel(logging.DEBUG)
 
     def get_logger(self):
         self.res_logger = logging.getLogger('result_logger')
         self.info_logger = logging.getLogger('info_logger')
-        return self.info_logger, self.res_logger
+        self.err_logger = logging.getLogger('error_logger')
+
+        return self.info_logger, self.res_logger, self.err_logger

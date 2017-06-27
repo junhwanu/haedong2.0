@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
-import sys, time, threading, os
+import sys
+import threading
+import time
 
-import constant as const
-import screen
-import util
-import subject
-import request_thread as rq_thread
-import log_manager
-from log_manager import get_error_msg
-import strategy_var as st
-import chart
-import contract
-import strategy_manager as stm
 from PyQt5.QAxContainer import *
 from PyQt5.QtWidgets import *
 
+import chart_manager as chart
+import constant as const
+import contract_manager as cm
+import log_manager
+import screen
+import strategy_manager as stm
+import strategy_var as st
+import subject
+import telepot_manager as tm
+import util
+from log_manager import get_error_msg
+
 log = None
 res = None
+err = None
 
 class Api():
     req = []
@@ -24,12 +28,14 @@ class Api():
     last_req_time = time.time()
     last_pwd_check_time = time.time()
     app = None
+    account_pwd_input = False
     account = ""
+    누적수익 = 0
 
     def __init__(self):
         super(Api, self).__init__()
-        global log, res
-        log, res = log_manager.Log().get_logger()
+        global log, res, err
+        log, res, err = log_manager.Log().get_logger()
 
         if const.MODE is const.REAL:
             log.info("해동이2.0 실제투자 시작 합니다.")
@@ -194,14 +200,14 @@ class Api():
     def send_request(self):
         if len(self.req) > 0:
             config = self.req[0]
-            res.debug("send_request(), config : %s" % config)
-            log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
+            log.debug("send_request(), config : %s" % config)
+            #log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
             for input_value in config["InputValue"]:
-                log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
+                #log.debug("set input value, id : %s, value : %s" % (input_value[0], input_value[1]))
                 self.ocx.dynamicCall("SetInputValue(QString, QString)", input_value[0], input_value[1])
 
             rtn = self.ocx.dynamicCall("CommRqData(QString, QString, QString, QString)", config['sRQName'], config['sTrCode'], config['nPrevNext'], config['sScreenNo'])
-            log.debug("send_request(), rtn value : %s" % rtn)
+            #log.debug("send_request(), rtn value : %s" % rtn)
 
             if rtn == 0:
                 del self.req[0]
@@ -210,8 +216,9 @@ class Api():
                 if len(self.req) > 0:
                     time.sleep(0.25)
                     self.send_request()
+                    self.last_req_time = time.time()
             else:
-                log.error(self.parse_error_code(rtn))
+                err.error('send request() : %s' % self.parse_error_code(rtn))
 
 
     def set_input_value(self, sID, sValue):
@@ -270,6 +277,38 @@ class Api():
     # Control Event Handlers
     ####################################################
 
+    def OnEventConnect(self, nErrCode):
+        """
+        통신 연결 상태 변경시 이벤트
+
+        :param nErrCode: 에러 코드 - 0이면 로그인 성공, 음수면 실패, 에러코드 참조
+        """
+        log.info("OnEventConnect received")
+
+        if nErrCode == 0:
+            log.info("로그인 성공")
+            # 계좌번호 저장
+            self.account = self.get_login_info("ACCNO")
+            tm.init(self.account)
+            tm.sendMessage('해동이 정상 시작 됨.')
+            log.info("계좌번호 : " + self.account)
+
+            if const.MODE is const.REAL:
+                # 다이나믹 종목 정보 요청
+                self.get_dynamic_subject_code()
+                self.get_futures_deposit()
+                #self.get_my_deposit_info()
+
+                # 종목 정보 로그 찍기
+                log.info("참여 종목 : %s" % subject.info.values())
+
+            self.send_request()
+        else:
+            # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
+            err.log('로그인 실패[%s]' % self.parse_error_code(nErrCode))
+
+            self.quit()
+
     def OnReceiveTrData(self, sScrNo, sRQName, sTrCode, sRecordName, sPreNext, candle=None):
         """
         Tran 수신시 이벤트
@@ -303,6 +342,7 @@ class Api():
                         del subject.info[subject_symbol]
                         del st.info[subject_symbol]
 
+                        chart.init_data(subject_code)
                         # 초기 데이터 요청
                         for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
                             type = chart_config[0]
@@ -323,73 +363,112 @@ class Api():
                 log.debug("해외선물옵션틱차트조회 params : %s" % params)
 
                 if subject_code in subject.info:
-                    if subject_code not in chart.data:
-                        chart.init_data(subject_code)
+                    if const.MODE is const.REAL:
+                        data_str = self.ocx.dynamicCall("GetCommFullData(QString, QString, int)", sTrCode,
+                                                        sRecordName, 0)
 
-                        if const.MODE is const.REAL:
-                            data_str = self.ocx.dynamicCall("GetCommFullData(QString, QString, int)", sTrCode,
-                                                            sRecordName, 0)
+                        chart_data = chart.data[subject_code][chart_type][time_unit]  # 차트 타입과 시간단위에 맞는 차트 불러옴
 
-                            chart_data = chart.data[subject_code][chart_type][time_unit]  # 차트 타입과 시간단위에 맞는 차트 불러옴
+                        if len(chart_data['임시데이터']) == 0:
+                            ''' 가장 처음 데이터가 수신 되었을 때 '''
+                            log.info("데이터 수신 시작. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            chart_data['임시데이터'] = data_str.split()
 
-                            if len(chart_data['임시데이터']) == 0:
-                                ''' 가장 처음 데이터가 수신 되었을 때 '''
-                                log.info("데이터 수신 시작. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
-                                chart_data['임시데이터'] = data_str.split()
+                            chart_data['현재가변동횟수'] = int(chart_data['임시데이터'][0])
+                            chart_data['현재캔들'] = {}
+                            chart_data['현재캔들']['현재가'] = float(chart_data['임시데이터'][1])
+                            chart_data['현재캔들']['거래량'] = int(chart_data['임시데이터'][2])
+                            chart_data['현재캔들']['체결시간'] = str(chart_data['임시데이터'][3])
+                            chart_data['현재캔들']['시가'] = float(chart_data['임시데이터'][4])
+                            chart_data['현재캔들']['고가'] = float(chart_data['임시데이터'][5])
+                            chart_data['현재캔들']['저가'] = float(chart_data['임시데이터'][6])
+                            chart_data['현재캔들']['영업일자'] = str(chart_data['임시데이터'][7])
 
-                                chart_data['현재가변동횟수'] = int(chart_data['임시데이터'][0])
-                                chart_data['현재캔들'] = {}
-                                chart_data['현재캔들']['현재가'] = float(chart_data['임시데이터'][1])
-                                chart_data['현재캔들']['거래량'] = int(chart_data['임시데이터'][2])
-                                chart_data['현재캔들']['체결시간'] = str(chart_data['임시데이터'][3])
-                                chart_data['현재캔들']['시가'] = float(chart_data['임시데이터'][4])
-                                chart_data['현재캔들']['고가'] = float(chart_data['임시데이터'][5])
-                                chart_data['현재캔들']['저가'] = float(chart_data['임시데이터'][6])
-                                chart_data['현재캔들']['영업일자'] = str(chart_data['임시데이터'][7])
+                            chart_data['임시캔들'] = []    # 초기 데이터 수신 중 완성된 캔들을 임시로 저장하고, 수신이 완료된 후 Push
 
-                                chart_data['임시캔들'] = []    # 초기 데이터 수신 중 완성된 캔들을 임시로 저장하고, 수신이 완료된 후 Push
+                            if chart_data['현재가변동횟수'] == int(time_unit):
+                                log.debug("수신 된 첫 캔들이 이미 완성된 캔들이므로, 임시 캔들에 추가함.")
+                                chart_data['임새캔들'].append(chart_data['현재캔들'])
+                                chart.init_current_candle(subject_code, chart_type, time_unit)
 
-                                if chart_data['현재가변동횟수'] == int(time_unit):
-                                    log.debug("수신 된 첫 캔들이 이미 완성된 캔들이므로, 임시 캔들에 추가함.")
-                                    chart_data['임새캔들'].append(chart_data['현재캔들'])
-                                    chart.init_current_candle(subject_code, chart_type, time_unit)
-                            else:
-                                ''' 데이터 수신 중간 '''
-                                log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
-                                chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
+                            for tick in chart_data['임시틱']:
+                                ''' 첫 번째 데이터 수신 전 해당 차트로부터 들어온 Tick들 처리 '''
+                                if chart_data['현재가변동횟수'] == 0:
+                                    chart_data['현재캔들']['시가'] = tick[0]
 
-                            if len(chart_data['임시데이터']) / 7 > st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
-                            #if True:
-                                ''' 데이터 수신 완료 '''
+                                chart_data['현재가변동횟수'] += 1
+                                if tick[0] < chart_data['현재캔들']['저가']: chart_data['현재캔들']['저가'] = tick[0]
+                                if tick[0] > chart_data['현재캔들']['고가']: chart_data['현재캔들']['고가'] = tick[0]
 
-                                log.info("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
-                                current_idx = len(chart_data['임시데이터']) - 7
+                                if chart_data['현재가변동횟수'] == time_unit:
+                                    chart_data['현재캔들']['체결시간'] = tick[1]
+                                    chart_data['현재캔들']['현재가'] = tick[0]
+                                    chart_data['현재가변동횟수'] = 0
+                                    if chart_data['인덱스'] == -1:
+                                        chart_data['임시캔들'].append(chart_data['현재캔들'])
+                                    else:
+                                        chart.push(chart_data['현재캔들'], chart_type, time_unit)
+                        else:
+                            ''' 데이터 수신 중간 '''
+                            log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
 
-                                candle = {}
-                                while current_idx > 8:
-                                    candle['현재가'] = float(chart_data['임시데이터'][current_idx])
-                                    candle['거래량'] = int(chart_data['임시데이터'][current_idx + 1])
-                                    candle['체결시간'] = str(chart_data['임시데이터'][current_idx + 2])
-                                    candle['시가'] = float(chart_data['임시데이터'][current_idx + 3])
-                                    candle['고가'] = float(chart_data['임시데이터'][current_idx + 4])
-                                    candle['저가'] = float(chart_data['임시데이터'][current_idx + 5])
-                                    candle['영업일자'] = str(chart_data['임시데이터'][current_idx + 6])
-                                    current_idx -= 7
+                        if len(chart_data['임시데이터']) / 7 > st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                        #if True:
+                            ''' 데이터 수신 완료 '''
 
+                            log.info("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            current_idx = len(chart_data['임시데이터']) - 7
+
+                            candle = {}
+                            while current_idx > 8:
+                                candle['현재가'] = float(chart_data['임시데이터'][current_idx])
+                                candle['거래량'] = int(chart_data['임시데이터'][current_idx + 1])
+                                candle['체결시간'] = str(chart_data['임시데이터'][current_idx + 2])
+                                candle['시가'] = float(chart_data['임시데이터'][current_idx + 3])
+                                candle['고가'] = float(chart_data['임시데이터'][current_idx + 4])
+                                candle['저가'] = float(chart_data['임시데이터'][current_idx + 5])
+                                candle['영업일자'] = str(chart_data['임시데이터'][current_idx + 6])
+                                current_idx -= 7
+
+                                chart.push(subject_code, chart_type, time_unit, candle)
+
+                            if len(chart_data['임시캔들']) > 0:
+                                log.info("데이터 수신 중 완성된 임시캔들들 Push.")
+                                for candle in chart_data['임시캔들']:
                                     chart.push(subject_code, chart_type, time_unit, candle)
 
-                                if len(chart_data['임시캔들']) > 0:
-                                    log.info("데이터 수신 중 완성된 임시캔들들 Push.")
-                                    for candle in chart_data['임시캔들']:
-                                        chart.push(subject_code, chart_type, time_unit, candle)
+                            chart.data[subject_code]['상태'] = '매매가능'
 
-                            else:
-                                self.request_tick_info(subject_code, time_unit, sPreNext)
+                        else:
+                            self.request_tick_info(subject_code, time_unit, sPreNext)
 
-                        elif const.MODE is const.TEST:
-                            pass
+                    elif const.MODE is const.TEST:
+                        pass
 
             elif sRQName == '미결제잔고내역조회':
+                order_info = {}
+                contract_cnt = int(
+                    self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 1,
+                                         '매도수량'))
+
+                if contract_cnt is 0:
+                    contract_cnt = int(
+                        self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 1,
+                                             '매수수량'))
+                    order_info['매도수구분'] = const.매수
+                else:
+                    order_info['매도수구분'] = const.매도
+
+                if contract_cnt is 0: return
+
+                order_info['종목코드'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
+                                                          sRecordName, 0, '종목코드').strip()
+                order_info['신규수량'] = contract_cnt
+                order_info['체결표시가격'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
+                                                            sRecordName, 0, '평균단가').strip()
+                log.info("미결제잔고내역조회 : %s", order_info)
+
                 '''
                 if self.state == '매매가능': return
                 self.state = '매매가능'
@@ -421,10 +500,11 @@ class Api():
                 '''
 
             elif sRQName == "예수금및증거금현황조회":
-                contract.my_deposit = int(
+                self.account_pwd_input = True
+                cm.예수금 = int(
                     self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 0,
                                          '주문가능금액').strip())
-                log.info('예수금 현황 : ' + str(contract.my_deposit))
+                log.info('예수금 현황 : ' + str(cm.예수금))
 
         except Exception as err:
             log.error(get_error_msg(err))
@@ -437,10 +517,51 @@ class Api():
         :param nItemCnt: 아이템갯수
         :param sFidList: 데이터리스트 - 데이터 구분은 ‘;’ 이다.
         """
-        log.info("onReceiveChejanData")
+        log.debug("onReceiveChejanData (%s, %s, %s)" % (sGubun, nItemCnt, sFidList))
 
         try:
-            pass
+            if sGubun == '1':
+                order_info = {}
+
+                if const.MODE == const.REAL:  # 실제투자
+                    order_info['주문번호'] = int(self.ocx.dynamicCall("GetChejanData(int)", 9203))  # 주문번호
+                    order_info['원주문번호'] = int(self.ocx.dynamicCall("GetChejanData(int)", 904))  # 원주문번호
+                    order_info['주문유형'] = int(
+                        self.ocx.dynamicCall("GetChejanData(int)", 906))  # 주문유형(1 : 시장가, 2 : 지정가, 3 : STOP)
+                    order_info['종목코드'] = self.ocx.dynamicCall("GetChejanData(int)", 9001)  # 종목코드
+                    order_info['매도수구분'] = int(self.ocx.dynamicCall("GetChejanData(int)", 907))  # 매도수구분(1 : 매도, 2 : 매수)
+                    order_info['체결표시가격'] = self.ocx.dynamicCall("GetChejanData(int)", 13331)  # 체결표시가격
+                    order_info['신규수량'] = self.ocx.dynamicCall("GetChejanData(int)", 13327)  # 신규수량
+                    order_info['청산수량'] = self.ocx.dynamicCall("GetChejanData(int)", 13328)  # 청산수량
+                    order_info['체결수량'] = self.ocx.dynamicCall("GetChejanData(int)", 911)  # 체결수량
+
+                    self.get_my_deposit_info()
+                elif const.MODE == const.TEST:  # 테스트
+                    order_info = o_info
+
+                order_info['체결표시가격'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
+
+                add_cnt = int(order_info['신규수량'])
+                remove_cnt = int(order_info['청산수량'])
+
+                ''' 청산 체결 '''
+                if remove_cnt > 0:
+                    msg = '청산주문 체결 [%s]' % order_info
+                    res.info(msg)
+                    수익 = cm.remove_contract(order_info)
+                    self.누적수익 += 수익
+
+                    tm.sendMessage('%s, 체결수익 : %s, 누적수익 : %s' % (msg, 수익, self.누적수익))
+
+                ''' 신규 매매 체결 '''
+                if add_cnt > 0:
+                    msg = '신규주문 체결 [%s]' % order_info
+                    res.info('신규주문 체결 [%s]' % order_info)
+                    cm.add_contract(order_info)
+
+                    tm.sendMessage(msg)
+
+
         except Exception as err:
             log.error(get_error_msg(err))
 
@@ -455,6 +576,12 @@ class Api():
         """
 
         try:
+            if subject_code not in subject.info:
+                log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
+                return
+
+            res.info("RealData (%s, %s, %s)" % (subject_code, sRealType, sRealData))
+
             current_price = self.ocx.dynamicCall("GetCommRealData(QString, int)", "현재가", 140)  # 140은 현재가의 코드
             current_time = self.ocx.dynamicCall("GetCommRealData(QString, int)", "체결시간", 20)  # 20은 체결시간의 코드
             current_price = round(float(current_price), subject.info[subject_code]['자릿수'])
@@ -466,13 +593,11 @@ class Api():
                 self.last_req_time = now
 
             ''' 계좌번호 비밀번호 입력했는지 체크 '''
-            if now- self.last_pwd_check_time > 2:
+            if now- self.last_pwd_check_time > 2 and self.account_pwd_input is False:
                 self.get_my_deposit_info()
+                self.get_contract_list()
                 self.last_pwd_check_time = now
 
-            if subject_code not in chart.data:
-                log.error("요청하지 않은 데이터 수신.")
-                return
 
             ''' 캔들 생성 '''
             for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
@@ -481,6 +606,10 @@ class Api():
 
                 chart_data = chart.data[subject_code][chart_type][time_unit]
                 if chart_type == const.틱차트:
+                    if len(chart_data['현재캔들'].keys()) is 0:
+                        chart_data['임시틱'].append( [ current_price, current_time ])
+                        return
+
                     if chart_data['현재가변동횟수'] == 0:
                         chart_data['현재캔들']['시가'] = current_price
 
@@ -501,56 +630,24 @@ class Api():
                     pass
 
             ''' 계약 청산 '''
-            if contract.get_contract_count(subject_code) > 0:
-                if chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중':
-                    sell_contents = stm.is_it_sell(subject_code, current_price)
+            if cm.get_contract_count(subject_code) > 0:
+                sell_contents = stm.is_it_sell(subject_code, current_price)
 
-                    if sell_contents['신규주문']:
-                        self.send_order(sell_contents['매도수구분'], subject_code, sell_contents['수량'])
+                if sell_contents['신규주문']:
+                    self.send_order(sell_contents['매도수구분'], subject_code, sell_contents['수량'])
 
             ''' 매매 진입 '''
-            if contract.get_contract_count(subject_code) == 0:
-                if chart.data[subject_code]['상태'] != '매수중' and chart.data[subject_code]['상태'] != '매도중'\
-                        and chart.data[subject_code]['상태'] != '매매시도중' and chart.data[subject_code]['상태'] != '청산시도중':
-                    order_contents = stm.is_it_ok(subject_code, current_price)
+            if cm.get_contract_count(subject_code) == 0:
+                order_contents = stm.is_it_ok(subject_code, current_price)
 
-                    if order_contents['신규주문']:
-                        self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
+                if order_contents['신규주문']:
+                    self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
+
+            ''' 전략 선택 '''
+            stm.strategy_selector(subject_code, current_price)
 
         except Exception as err:
             log.error(get_error_msg(err))
-
-    def OnEventConnect(self, nErrCode):
-        """
-        통신 연결 상태 변경시 이벤트
-
-        :param nErrCode: 에러 코드 - 0이면 로그인 성공, 음수면 실패, 에러코드 참조
-        """
-        log.info("OnEventConnect received")
-
-        if nErrCode == 0:
-            log.info("로그인 성공")
-            # 계좌번호 저장
-            self.account = self.get_login_info("ACCNO")
-            log.info("계좌번호 : " + self.account)
-
-            if const.MODE is const.REAL:
-                # 다이나믹 종목 정보 요청
-                self.get_dynamic_subject_code()
-                self.get_futures_deposit()
-                #self.get_my_deposit_info()
-
-                # 종목 정보 로그 찍기
-                log.info("참여 종목 : %s" % subject.info.values())
-
-            self.send_request()
-        else:
-            c_time = "%02d%02d" % (time.localtime().tm_hour, time.localtime().tm_min)
-
-            # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            log.critical(rq_thread.parse_error_code(nErrCode))
-
-            self.quit()
 
     @staticmethod
     def parse_error_code(err_code):

@@ -6,8 +6,7 @@ import log_manager
 import constant as const
 
 data = {}
-temp_data = {}
-log, res = log_manager.Log().get_logger()
+log, res, err = log_manager.Log().get_logger()
 
 def init_data(subject_code):
     data[subject_code] = {}
@@ -35,6 +34,9 @@ def init_data(subject_code):
                 data[subject_code][chart_type][time_unit]['현재캔들'] = {}
                 data[subject_code][chart_type][time_unit]['임시캔들'] = []
                 data[subject_code][chart_type][time_unit]['임시데이터'] = []
+                data[subject_code][chart_type][time_unit]['임시틱'] = []
+                data[subject_code][chart_type][time_unit]['차트타입'] = chart_type
+                data[subject_code][chart_type][time_unit]['시간단위'] = time_unit
 
                 data[subject_code][chart_type][time_unit]['인덱스'] = -1
                 data[subject_code][chart_type][time_unit]['이동평균선'] = {}
@@ -51,12 +53,21 @@ def init_data(subject_code):
                 data[subject_code][chart_type][time_unit]['볼린저밴드']['하한선'] = []
                 data[subject_code][chart_type][time_unit]['볼린저밴드']['캔들위치'] = []
 
+                data[subject_code][chart_type][time_unit]['일목균형표'] = {}
+                data[subject_code][chart_type][time_unit]['일목균형표']['전환선'] = []
+                data[subject_code][chart_type][time_unit]['일목균형표']['기준선'] = []
+                data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'] = []
+                data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'] = []
+                for index in range(0, 26):
+                    data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append(None)
+                    data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
+
                 data[subject_code][chart_type][time_unit]['SAR'] = 0  # 현재 SAR
                 data[subject_code][chart_type][time_unit]['EP'] = 0
                 data[subject_code][chart_type][time_unit]['AF'] = 0
                 data[subject_code][chart_type][time_unit]['현재플로우'] = ''
                 data[subject_code][chart_type][time_unit]['플로우'] = []
-                data[subject_code][chart_type][time_unit]['지난플로우'] = []  # [ ['상향', 1209.3], ['하향', 1204.3] ]
+                data[subject_code][chart_type][time_unit]['지난플로우'] = []  # [ {'추세': '상향', '시작SAR': 1209.3 '마지막SAR': 1212.4 }, {'추세': '하향', '시작SAR': 1212.4 '마지막SAR': 1211.0 } ]
             elif chart_type is const.분차트:
                 data[subject_code][chart_type][time_unit]['현재가변동시간'] = []
                 pass
@@ -73,6 +84,7 @@ def init_data(subject_code):
             data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
         '''
 
+
 def init_current_candle(subject_code, chart_type, time_unit):
     data[subject_code][chart_type][time_unit]['현재캔들']['고가'] = 0
     data[subject_code][chart_type][time_unit]['현재캔들']['저가'] = const.INFINITY
@@ -81,6 +93,7 @@ def init_current_candle(subject_code, chart_type, time_unit):
         data[subject_code][chart_type][time_unit]['현재가변동횟수'] = 0
     elif chart_type is const.분차트:
         data[subject_code][chart_type][time_unit]['현재가변동시간'] = '?????'
+
 
 def push(subject_code, chart_type, time_unit, candle):
     data[subject_code][chart_type][time_unit]['현재가'].append(candle['현재가'])
@@ -94,14 +107,20 @@ def push(subject_code, chart_type, time_unit, candle):
 
     calc(subject_code, chart_type, time_unit)
 
+
 def calc(subject_code, chart_type, time_unit):
     if subject.info[subject_code]['전략'] == '파라':
         calc_ma_line(subject_code, chart_type, time_unit)
         calc_ema_line(subject_code, chart_type, time_unit)
+        calc_ilmok_chart(subject_code, chart_type, time_unit)
 
-        if data[subject_code][chart_type][time_unit]['인덱스'] < 5: data[subject_code][chart_type][time_unit]['플로우'].append('모름')
-        elif data[subject_code][chart_type][time_unit]['인덱스'] == 5: init_sar(subject_code, chart_type, time_unit)
-        else: calc_sar(subject_code, chart_type, time_unit)
+        if data[subject_code][chart_type][time_unit]['인덱스'] < 5:
+            data[subject_code][chart_type][time_unit]['플로우'].append('모름')
+        elif data[subject_code][chart_type][time_unit]['인덱스'] == 5:
+            init_sar(subject_code, chart_type, time_unit)
+        else:
+            calc_sar(subject_code, chart_type, time_unit)
+
 
 def calc_ma_line(subject_code, chart_type, time_unit):
     '''
@@ -110,10 +129,13 @@ def calc_ma_line(subject_code, chart_type, time_unit):
     for days in data[subject_code][chart_type][time_unit]['이동평균선']['일수']:
         if data[subject_code][chart_type][time_unit]['인덱스'] >= days - 1:
             avg = sum(
-                data[subject_code][chart_type][time_unit]['현재가'][ data[subject_code][chart_type][time_unit]['인덱스'] - days + 1: data[subject_code][chart_type][time_unit]['인덱스'] + 1 ]) / days
+                data[subject_code][chart_type][time_unit]['현재가'][
+                data[subject_code][chart_type][time_unit]['인덱스'] - days + 1: data[subject_code][chart_type][time_unit][
+                                                                                 '인덱스'] + 1]) / days
             data[subject_code][chart_type][time_unit]['이동평균선'][days].append(avg)
         else:
             data[subject_code][chart_type][time_unit]['이동평균선'][days].append(None)
+
 
 def calc_ema_line(subject_code, chart_type, time_unit):
     '''
@@ -123,14 +145,18 @@ def calc_ema_line(subject_code, chart_type, time_unit):
         if data[subject_code][chart_type][time_unit]['인덱스'] >= days - 1:
             if data[subject_code][chart_type][time_unit]['인덱스'] == days - 1:
                 avg = sum(data[subject_code][chart_type][time_unit]['현재가'][
-                          data[subject_code][chart_type][time_unit]['인덱스'] - days + 1: data[subject_code][chart_type][time_unit]['인덱스'] + 1]) / days
+                          data[subject_code][chart_type][time_unit]['인덱스'] - days + 1:
+                          data[subject_code][chart_type][time_unit]['인덱스'] + 1]) / days
                 data[subject_code][chart_type][time_unit]['지수이동평균선'][days].append(avg)
             else:
                 alpha = 2 / (days + 1)
-                ema = alpha * data[subject_code][chart_type][time_unit]['현재가'][-1] + (1.0 - alpha) * data[subject_code][chart_type][time_unit]['지수이동평균선'][days][-1]
+                ema = alpha * data[subject_code][chart_type][time_unit]['현재가'][-1] + (1.0 - alpha) * \
+                                                                                     data[subject_code][chart_type][
+                                                                                         time_unit]['지수이동평균선'][days][-1]
                 data[subject_code][chart_type][time_unit]['지수이동평균선'][days].append(ema)
         else:
             data[subject_code][chart_type][time_unit]['지수이동평균선'][days].append(None)
+
 
 def calc_ilmok_chart(subject_code, chart_type, time_unit):
     '''
@@ -140,28 +166,47 @@ def calc_ilmok_chart(subject_code, chart_type, time_unit):
         data[subject_code][chart_type][time_unit]['일목균형표']['전환선'].append(None)
     else:
         data[subject_code][chart_type][time_unit]['일목균형표']['전환선'].append((max(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 9: data[subject_code][chart_type][time_unit]['인덱스']]) + min(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 9: data[subject_code][chart_type][time_unit]['인덱스']])) / 2)
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 9: data[subject_code][chart_type][time_unit][
+                '인덱스']]) + min(
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 9: data[subject_code][chart_type][time_unit][
+                '인덱스']])) / 2)
 
     if data[subject_code][chart_type][time_unit]['인덱스'] < 26:
         data[subject_code][chart_type][time_unit]['일목균형표']['기준선'].append(None)
     else:
         data[subject_code][chart_type][time_unit]['일목균형표']['기준선'].append((max(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 26: data[subject_code][chart_type][time_unit]['인덱스']]) + min(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 26: data[subject_code][chart_type][time_unit]['인덱스']])) / 2)
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 26: data[subject_code][chart_type][time_unit][
+                '인덱스']]) + min(
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 26: data[subject_code][chart_type][time_unit][
+                '인덱스']])) / 2)
 
     if data[subject_code][chart_type][time_unit]['인덱스'] >= 26:
-        data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append((data[subject_code][chart_type][time_unit]['일목균형표']['전환선'][data[subject_code][chart_type][time_unit]['인덱스']] +
-                                                     data[subject_code][chart_type][time_unit]['일목균형표']['기준선'][data[subject_code][chart_type][time_unit]['인덱스']]) / 2)
+        data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append((data[subject_code][chart_type][time_unit][
+                                                                                '일목균형표']['전환선'][
+                                                                                data[subject_code][chart_type][
+                                                                                    time_unit]['인덱스']] +
+                                                                            data[subject_code][chart_type][time_unit][
+                                                                                '일목균형표']['기준선'][
+                                                                                data[subject_code][chart_type][
+                                                                                    time_unit]['인덱스']]) / 2)
     else:
         data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append(None)
 
     if data[subject_code][chart_type][time_unit]['인덱스'] >= 52:
         data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append((max(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 52: data[subject_code][chart_type][time_unit]['인덱스']]) + min(
-            data[subject_code][chart_type][time_unit]['현재가'][data[subject_code][chart_type][time_unit]['인덱스'] - 52: data[subject_code][chart_type][time_unit]['인덱스']])) / 2)
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 52: data[subject_code][chart_type][time_unit][
+                '인덱스']]) + min(
+            data[subject_code][chart_type][time_unit]['현재가'][
+            data[subject_code][chart_type][time_unit]['인덱스'] - 52: data[subject_code][chart_type][time_unit][
+                '인덱스']])) / 2)
     else:
         data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
+
 
 def init_sar(subject_code, chart_type, time_unit):
     ep = data[subject_code][chart_type][time_unit]['EP']
@@ -201,6 +246,7 @@ def init_sar(subject_code, chart_type, time_unit):
     data[subject_code][chart_type][time_unit]['플로우'].append(temp_flow)
 
     calc_sar(subject_code, chart_type, time_unit)
+
 
 def calc_sar(subject_code, chart_type, time_unit):
     sar = data[subject_code][chart_type][time_unit]['SAR']
@@ -242,7 +288,19 @@ def calc_sar(subject_code, chart_type, time_unit):
             the_lowest_price = data[subject_code][chart_type][time_unit]['저가'][index]
 
             ep = the_lowest_price
-            log.info("하향 반전, 시간 : %s" % data[subject_code][chart_type][time_unit]['체결시간'][-1])
+            log.info("%s, %s, %s : 하향 반전, 시간 : %s" % (
+                subject_code, chart_type, time_unit, data[subject_code][chart_type][time_unit]['체결시간'][-1]))
+
+            flow_result = {}
+            flow_result['추세'] = const.상향
+            flow_result['마지막SAR'] = next_sar
+            if len(data[subject_code][chart_type][time_unit]['지난플로우']) == 0:
+                flow_result['시작SAR'] = 0
+            else:
+                flow_result['시작SAR'] = data[subject_code][chart_type][time_unit]['지난플로우'][-1]['마지막SAR']
+
+            data[subject_code][chart_type][time_unit]['지난플로우'].append(flow_result)
+
     elif temp_flow == "하향":
         if data[subject_code][chart_type][time_unit]['고가'][index] <= next_sar:  # 하락추세에서 고가가 내일의 SAR보다 낮으면 하락이 유효
             today_sar = next_sar
@@ -263,8 +321,18 @@ def calc_sar(subject_code, chart_type, time_unit):
             the_highest_price = data[subject_code][chart_type][time_unit]['고가'][index]
 
             ep = the_highest_price
-            log.info("상향 반전, 시간 : %s" % data[subject_code][chart_type][time_unit]['체결시간'][-1])
+            log.info("%s, %s, %s : 상향 반전, 시간 : %s" % (
+                subject_code, chart_type, time_unit, data[subject_code][chart_type][time_unit]['체결시간'][-1]))
 
+            flow_result = {}
+            flow_result['추세'] = const.하향
+            flow_result['마지막SAR'] = next_sar
+            if len(data[subject_code][chart_type][time_unit]['지난플로우']) == 0:
+                flow_result['시작SAR'] = 0
+            else:
+                flow_result['시작SAR'] = data[subject_code][chart_type][time_unit]['지난플로우'][-1]['마지막SAR']
+
+            data[subject_code][chart_type][time_unit]['지난플로우'].append(flow_result)
 
     next_sar = today_sar + af * (max(the_highest_price, the_lowest_price) - today_sar)
 

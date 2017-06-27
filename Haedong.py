@@ -17,7 +17,7 @@ if __name__ == "__main__":
 
     logger = log_manager.Log()
     logger.init(const.MAIN_DIR)
-    log, res = logger.get_logger()
+    log, res, err = logger.get_logger()
 
     log.info("실제투자(1), 테스트(2)")
     while(True):
