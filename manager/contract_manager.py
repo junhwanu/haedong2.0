@@ -5,7 +5,7 @@ import log_manager
 import para
 from constant import *
 
-log, res, err = log_manager.Log().get_logger()
+log, res, err_log = log_manager.Log().get_logger()
 
 예수금 = 0
 contract_list = {}
@@ -48,7 +48,7 @@ def add_contract(order_info):
 
 
     except Exception as err:
-        err.error(log_manager.get_error_msg(err))
+        err_log.error(log_manager.get_error_msg(err))
 
 def remove_contract(order_info):
     try:
@@ -70,7 +70,7 @@ def remove_contract(order_info):
 
         return profit
     except Exception as err:
-        err.error(log_manager.get_error_msg(err))
+        err_log.error(log_manager.get_error_msg(err))
 
 def get_contract_count(subject_code):
     try:
@@ -80,7 +80,7 @@ def get_contract_count(subject_code):
         for contract in contract_list[subject_code]:
             cnt = cnt + contract.수량
     except Exception as err:
-        err.error(log_manager.get_error_msg(err))
+        err_log.error(log_manager.get_error_msg(err))
 
         return 0
 

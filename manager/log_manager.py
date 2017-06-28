@@ -55,7 +55,7 @@ class Log():
         info_streamHandler = logging.StreamHandler()
         info_streamHandler.setFormatter(fomatter)
 
-        err_fileHandler = logging.FileHandler(self.info_file, encoding='utf-8')
+        err_fileHandler = logging.FileHandler(self.err_file, encoding='utf-8')
         err_fileHandler.setFormatter(fomatter)
         err_streamHandler = logging.StreamHandler()
         err_streamHandler.setFormatter(fomatter)
@@ -74,7 +74,7 @@ class Log():
 
         self.info_logger.setLevel(logging.DEBUG)
         self.res_logger.setLevel(logging.DEBUG)
-        self.err_logger.setLevel(logging.DEBUG)
+        self.err_logger.setLevel(logging.ERROR)
 
     def get_logger(self):
         self.res_logger = logging.getLogger('result_logger')

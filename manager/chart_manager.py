@@ -6,7 +6,7 @@ import log_manager
 import constant as const
 
 data = {}
-log, res, err = log_manager.Log().get_logger()
+log, res, err_log = log_manager.Log().get_logger()
 
 def init_data(subject_code):
     data[subject_code] = {}
@@ -62,7 +62,8 @@ def init_data(subject_code):
                     data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append(None)
                     data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
 
-                data[subject_code][chart_type][time_unit]['SAR'] = 0  # 현재 SAR
+                data[subject_code][chart_type][time_unit]['현재SAR'] = 0  # 현재 SAR
+                data[subject_code][chart_type][time_unit]['SAR'] = []
                 data[subject_code][chart_type][time_unit]['EP'] = 0
                 data[subject_code][chart_type][time_unit]['AF'] = 0
                 data[subject_code][chart_type][time_unit]['현재플로우'] = ''
@@ -84,6 +85,8 @@ def init_data(subject_code):
             data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
         '''
 
+def clear_data(subject_code):
+    del data[subject_code]
 
 def init_current_candle(subject_code, chart_type, time_unit):
     data[subject_code][chart_type][time_unit]['현재캔들']['고가'] = 0
@@ -101,8 +104,8 @@ def push(subject_code, chart_type, time_unit, candle):
     data[subject_code][chart_type][time_unit]['고가'].append(candle['고가'])
     data[subject_code][chart_type][time_unit]['저가'].append(candle['저가'])
     data[subject_code][chart_type][time_unit]['체결시간'].append(candle['체결시간'])
-    data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
-    data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
+    if '영업일자' in candle: data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
+    if '거래량' in candle: data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
     data[subject_code][chart_type][time_unit]['인덱스'] += 1
 
     calc(subject_code, chart_type, time_unit)
@@ -112,10 +115,11 @@ def calc(subject_code, chart_type, time_unit):
     if subject.info[subject_code]['전략'] == '파라':
         calc_ma_line(subject_code, chart_type, time_unit)
         calc_ema_line(subject_code, chart_type, time_unit)
-        calc_ilmok_chart(subject_code, chart_type, time_unit)
+        #calc_ilmok_chart(subject_code, chart_type, time_unit)
 
         if data[subject_code][chart_type][time_unit]['인덱스'] < 5:
             data[subject_code][chart_type][time_unit]['플로우'].append('모름')
+            data[subject_code][chart_type][time_unit]['SAR'].append(0)
         elif data[subject_code][chart_type][time_unit]['인덱스'] == 5:
             init_sar(subject_code, chart_type, time_unit)
         else:
@@ -239,7 +243,8 @@ def init_sar(subject_code, chart_type, time_unit):
 
     sar = ((ep - init_sar) * af) + init_sar
 
-    data[subject_code][chart_type][time_unit]['SAR'] = sar
+    data[subject_code][chart_type][time_unit]['SAR'].append(sar)
+    data[subject_code][chart_type][time_unit]['현재SAR'] = sar
     data[subject_code][chart_type][time_unit]['EP'] = ep
     data[subject_code][chart_type][time_unit]['AF'] = af
     data[subject_code][chart_type][time_unit]['현재플로우'] = temp_flow
@@ -249,9 +254,9 @@ def init_sar(subject_code, chart_type, time_unit):
 
 
 def calc_sar(subject_code, chart_type, time_unit):
-    sar = data[subject_code][chart_type][time_unit]['SAR']
+    sar = data[subject_code][chart_type][time_unit]['SAR'][-1]
     ep = data[subject_code][chart_type][time_unit]['EP']
-    temp_flow = data[subject_code][chart_type][time_unit]['현재플로우']
+    temp_flow = data[subject_code][chart_type][time_unit]['플로우'][-1]
     af = data[subject_code][chart_type][time_unit]['AF']
     init_af = st.info[subject_code]['파라']['차트변수'][chart_type][time_unit]['INIT_AF']
     max_af = st.info[subject_code]['파라']['차트변수'][chart_type][time_unit]['MAX_AF']
@@ -336,7 +341,8 @@ def calc_sar(subject_code, chart_type, time_unit):
 
     next_sar = today_sar + af * (max(the_highest_price, the_lowest_price) - today_sar)
 
-    data[subject_code][chart_type][time_unit]['SAR'] = next_sar
+    data[subject_code][chart_type][time_unit]['SAR'].append(next_sar)
+    data[subject_code][chart_type][time_unit]['현재SAR'] = next_sar
     data[subject_code][chart_type][time_unit]['EP'] = ep
     data[subject_code][chart_type][time_unit]['AF'] = af
     data[subject_code][chart_type][time_unit]['현재플로우'] = temp_flow

@@ -11,13 +11,15 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') 
 
 import log_manager
 import constant as const
+import tester
 import kiwoom
+import db_manager as dbm
 
 if __name__ == "__main__":
 
     logger = log_manager.Log()
     logger.init(const.MAIN_DIR)
-    log, res, err = logger.get_logger()
+    log, res, err_log = logger.get_logger()
 
     log.info("실제투자(1), 테스트(2)")
     while(True):
@@ -28,6 +30,7 @@ if __name__ == "__main__":
 
             break
         elif const.MODE is const.TEST:
+            tester.proc()
             break
 
         print("다시 입력해주세요.")

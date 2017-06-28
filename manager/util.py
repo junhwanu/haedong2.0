@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
 import datetime, time
 import constant as const
 import chart_manager as chart
 import strategy_var as st
+import subject
 
 def get_today_date():
     today = datetime.date.today()
@@ -17,7 +17,7 @@ def get_today_date():
     return year + month + day
 
 
-def get_time(add_min, subject_code, chart_type=None, time_unit=None):
+def get_time(add_min, subject_code):
     # 현재 시간 정수형으로 return
     if const.MODE== const.REAL:  # 실제투자
         current_hour = time.localtime().tm_hour
@@ -30,6 +30,8 @@ def get_time(add_min, subject_code, chart_type=None, time_unit=None):
         current_time = current_hour * 100 + current_min
 
     elif const.MODE == const.TEST:  # 테스트
+        chart_type = st.info[subject_code][ subject.info[subject_code]['전략'] ]['차트'][0][0]
+        time_unit = st.info[subject_code][ subject.info[subject_code]['전략'] ]['차트'][0][1]
         chart_data = chart.data[subject_code][chart_type][time_unit]
 
         current_hour = int(str(chart_data['체결시간'][-1])[8:10])
@@ -40,7 +42,7 @@ def get_time(add_min, subject_code, chart_type=None, time_unit=None):
 
         current_time = current_hour * 100 + current_min
 
-    return current_time
+    return int(current_time)
 
 def get_previous_para_result(subject_code, chart_type, time_unit, length = 1):
     result = []

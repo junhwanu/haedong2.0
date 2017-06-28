@@ -20,7 +20,7 @@ from log_manager import get_error_msg
 
 log = None
 res = None
-err = None
+err_log = None
 
 class Api():
     req = []
@@ -34,8 +34,8 @@ class Api():
 
     def __init__(self):
         super(Api, self).__init__()
-        global log, res, err
-        log, res, err = log_manager.Log().get_logger()
+        global log, res, err_log
+        log, res, err_log = log_manager.Log().get_logger()
 
         if const.MODE is const.REAL:
             log.info("해동이2.0 실제투자 시작 합니다.")
@@ -218,7 +218,7 @@ class Api():
                     self.send_request()
                     self.last_req_time = time.time()
             else:
-                err.error('send request() : %s' % self.parse_error_code(rtn))
+                err_log.error('send request() : %s' % self.parse_error_code(rtn))
 
 
     def set_input_value(self, sID, sValue):
@@ -305,7 +305,7 @@ class Api():
             self.send_request()
         else:
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            err.log('로그인 실패[%s]' % self.parse_error_code(nErrCode))
+            err_log.error('로그인 실패[%s]' % self.parse_error_code(nErrCode))
 
             self.quit()
 
@@ -407,7 +407,7 @@ class Api():
                                     if chart_data['인덱스'] == -1:
                                         chart_data['임시캔들'].append(chart_data['현재캔들'])
                                     else:
-                                        chart.push(chart_data['현재캔들'], chart_type, time_unit)
+                                        chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
                         else:
                             ''' 데이터 수신 중간 '''
                             log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
@@ -580,23 +580,29 @@ class Api():
                 log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
                 return
 
-            res.info("RealData (%s, %s, %s)" % (subject_code, sRealType, sRealData))
+            #res.info("RealData (%s, %s, %s)" % (subject_code, sRealType, sRealData))
 
-            current_price = self.ocx.dynamicCall("GetCommRealData(QString, int)", "현재가", 140)  # 140은 현재가의 코드
-            current_time = self.ocx.dynamicCall("GetCommRealData(QString, int)", "체결시간", 20)  # 20은 체결시간의 코드
+            if const.MODE == const.REAL:
+                current_price = self.ocx.dynamicCall("GetCommRealData(QString, int)", "현재가", 140)  # 140은 현재가의 코드
+                current_time = self.ocx.dynamicCall("GetCommRealData(QString, int)", "체결시간", 20)  # 20은 체결시간의 코드
+            elif const.MODE == const.TEST:
+                current_price = sRealType
+                current_time = sRealData
+
             current_price = round(float(current_price), subject.info[subject_code]['자릿수'])
 
-            ''' Send Request '''
-            now = time.time()
-            if now - self.last_req_time > 0.25:
-                self.send_request()
-                self.last_req_time = now
+            if const.MODE == const.REAL:
+                ''' Send Request '''
+                now = time.time()
+                if now - self.last_req_time > 0.25:
+                    self.send_request()
+                    self.last_req_time = now
 
-            ''' 계좌번호 비밀번호 입력했는지 체크 '''
-            if now- self.last_pwd_check_time > 2 and self.account_pwd_input is False:
-                self.get_my_deposit_info()
-                self.get_contract_list()
-                self.last_pwd_check_time = now
+                ''' 계좌번호 비밀번호 입력했는지 체크 '''
+                if now- self.last_pwd_check_time > 2 and self.account_pwd_input is False:
+                    self.get_my_deposit_info()
+                    self.get_contract_list()
+                    self.last_pwd_check_time = now
 
 
             ''' 캔들 생성 '''
@@ -617,14 +623,16 @@ class Api():
                     if current_price < chart_data['현재캔들']['저가'] : chart_data['현재캔들']['저가'] = current_price
                     if current_price > chart_data['현재캔들']['고가']: chart_data['현재캔들']['고가'] = current_price
 
-                    if chart_data['현재가변동횟수'] == time_unit:
+                    if chart_data['현재가변동횟수'] == int(time_unit):
                         chart_data['현재캔들']['체결시간'] = current_time
                         chart_data['현재캔들']['현재가'] = current_price
                         chart_data['현재가변동횟수'] = 0
-                        if chart_data['인덱스'] == -1:
+                        if chart_data['인덱스'] == -1 and const.MODE == const.REAL:
                             chart_data['임시캔들'].append(chart_data['현재캔들'])
                         else:
-                            chart.push(chart_data['현재캔들'], chart_type, time_unit)
+                            #log.info('%s, %s, %s, %s' % (subject_code, chart_type, time_unit, chart_data['현재캔들']))
+                            chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
+                            chart.init_current_candle(subject_code, chart_type, time_unit)
 
                 elif chart_type == const.분차트:
                     pass
@@ -641,7 +649,8 @@ class Api():
                 order_contents = stm.is_it_ok(subject_code, current_price)
 
                 if order_contents['신규주문']:
-                    self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
+                    res.info('신규주문 : %s' % order_contents)
+                    #self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
 
             ''' 전략 선택 '''
             stm.strategy_selector(subject_code, current_price)
