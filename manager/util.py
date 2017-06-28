@@ -44,11 +44,6 @@ def get_time(add_min, subject_code):
 
     return int(current_time)
 
-def get_previous_para_result(subject_code, chart_type, time_unit, length = 1):
-    result = []
-
-    return result
-
 def is_sorted(subject_code, chart_type, time_unit):
     lst = st.info[subject_code][const.파라]['차트변수'][chart_type][time_unit]['이동평균선']
     차트 = chart.data[subject_code][chart_type][time_unit]
