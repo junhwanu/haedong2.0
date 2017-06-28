@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import time
 import contract_manager as cm
 import subject
 import chart_manager as chart
@@ -9,8 +10,11 @@ import log_manager
 
 false = {'신규주문': False}
 log, res, err_log = log_manager.Log().get_logger()
+running_time = 0
 
 def is_it_ok(subject_code, current_price):
+    s_time = time.time()
+    global running_time
     try:
         차트 = get_chart(subject_code)
 
@@ -19,7 +23,15 @@ def is_it_ok(subject_code, current_price):
             chart_type = chart_config[0]
             time_unit = chart_config[1]
 
-            if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][파라]['차트변수'][chart_type][time_unit]['초기캔들수']: return false
+            if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][파라]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                running_time = running_time + (time.time() - s_time)
+                return false
+
+        매도수구분 = get_mesu_medo_type(subject_code, current_price, 차트[0])
+
+        if not (매도수구분 == 매수 or 매도수구분 == 매도):
+            running_time = running_time + (time.time() - s_time)
+            return false
 
         ''' 매매 가능으로 변경 '''
         #if chart.data[subject_code]['상태'] == '대기':  chart.data[subject_code]['상태'] = '매매가능'
@@ -27,27 +39,35 @@ def is_it_ok(subject_code, current_price):
         ''' 매매 불가 상태'''
         if chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중' \
                 or chart.data[subject_code]['상태'] == '매매시도중' or chart.data[subject_code]['상태'] == '청산시도중':
+            running_time = running_time + (time.time() - s_time)
             return false
 
         ''' 매매 불가 시간 '''
         if 2100 < get_time(0,subject_code) < 2230:
+            running_time = running_time + (time.time() - s_time)
             return false
 
-        매도수구분 = get_mesu_medo_type(subject_code, current_price, 차트[0])
-
-        if not (매도수구분 == 매수 or 매도수구분 == 매도): return false
         수량 = get_buy_count(subject_code, current_price)
 
         order_contents = {'신규주문': True, '매도수구분': 매도수구분, '수량': 수량}
 
+        running_time = running_time + (time.time() - s_time)
         return order_contents
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
+
+        running_time = running_time + (time.time() - s_time)
         return false
 
+
 def is_it_sell(subject_code, current_price):
+    global running_time
+
+    s_time = time.time()
     try:
-        if not (chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중') : return false
+        if not (chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중') :
+            running_time = running_time + (time.time() - s_time)
+            return false
 
         차트 = get_chart(subject_code)
         계약 = cm.get_contract_list(subject_code)
@@ -124,9 +144,13 @@ def is_it_sell(subject_code, current_price):
                         계약.손절가[청산단계] = 계약.손절가[청산단계] - 차트변수[청산단계별드리블틱][청산단계]
 
         order_info = {'신규주문':False, '매도수구분':매도수구분, '수량':수량}
+
+        running_time = running_time + (time.time() - s_time)
         return order_info
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
+
+        running_time = running_time + (time.time() - s_time)
         return false
 
 def get_chart(subject_code):
@@ -151,10 +175,33 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
 
         i = 차트['인덱스']
 
+        ''' 반전시 매매'''
+        if 현재플로우 == 상향:
+            if 현재가 < 차트[현재SAR]:
+                if is_sorted(subject_code, 차트타입, 시간단위) != 하락세:
+                    ''' 이동평균선 안맞을 시 매매 안함 '''
+                    log.debug('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
+                    return false
+
+                매도수구분 = 매도
+                차트['현재플로우'] = 하향  # 현재 플로우 즉시 반영
+                차트[현재SAR] = ZERO
+
+        elif 현재플로우 == 하향:
+            if 현재가 > 차트[현재SAR]:
+                if is_sorted(subject_code, 차트타입, 시간단위) != 상승세:
+                    ''' 이동평균선 안맞을 시 매매 안함 '''
+                    log.debug('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
+                    return false
+
+                매도수구분 = 매수
+                차트['현재플로우'] = 상향  # 현재 플로우 즉시 반영
+                차트[현재SAR] = INFINITY
+
         ''' 이전 플로우 수익이 매매불가수익량 이상일 때 매매 안함 '''
         if (지난플로우[0][추세] == 상향 and (지난플로우[0][마지막SAR] - 지난플로우[0][시작SAR]) >= 차트변수[매매불가수익량]) or \
             (지난플로우[0][추세] == 하향 and (지난플로우[0][시작SAR] - 지난플로우[0][마지막SAR]) >= 차트변수[매매불가수익량]):
-            log.info("이전 플로우 수익이 %s틱 이상이므로 현재 플로우는 넘어갑니다." % 차트변수[매매불가수익량])
+            log.debug("이전 플로우 수익이 %s틱 이상이므로 현재 플로우는 넘어갑니다." % 차트변수[매매불가수익량])
             return false
 
         ''' 틀, 틀, 틀, 틀 이후 매매 안함 '''
@@ -174,34 +221,11 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
             else: 맞틀리스트.insert(0, 틀)
 
         if 맞틀리스트[-5:] == [틀, 틀, 틀, 틀, 틀]:
-            log.info("틀 5회 연속으로 매매 안함.")
+            log.debug("틀 5회 연속으로 매매 안함.")
             return false
         elif 맞틀리스트[-4:] == [맞, 틀, 틀, 틀]:
-            log.info("맞, 틀, 틀, 틀로 매매 안함.")
+            log.debug("맞, 틀, 틀, 틀로 매매 안함.")
             return false
-
-        ''' 반전시 매매'''
-        if 현재플로우 == 상향:
-            if 현재가 < 차트[현재SAR]:
-                if is_sorted(subject_code, 차트타입, 시간단위) != 하락세:
-                    ''' 이동평균선 안맞을 시 매매 안함 '''
-                    log.info('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
-                    return false
-
-                매도수구분 = 매도
-                차트['현재플로우'] = 하향  # 현재 플로우 즉시 반영
-                차트[현재SAR] = ZERO
-
-        elif 현재플로우 == 하향:
-            if 현재가 > 차트[현재SAR]:
-                if is_sorted(subject_code, 차트타입, 시간단위) != 상승세:
-                    ''' 이동평균선 안맞을 시 매매 안함 '''
-                    log.info('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
-                    return false
-
-                매도수구분 = 매수
-                차트['현재플로우'] = 상향  # 현재 플로우 즉시 반영
-                차트[현재SAR] = INFINITY
 
         return 매도수구분
     except Exception as err:

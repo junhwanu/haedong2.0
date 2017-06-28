@@ -72,8 +72,8 @@ class Log():
         self.err_logger.addHandler(all_fileHandler)
         self.err_logger.addHandler(err_streamHandler)
 
-        self.info_logger.setLevel(logging.DEBUG)
-        self.res_logger.setLevel(logging.DEBUG)
+        self.info_logger.setLevel(logging.INFO)
+        self.res_logger.setLevel(logging.INFO)
         self.err_logger.setLevel(logging.ERROR)
 
     def get_logger(self):

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import datetime
+import time
 import subject
 import strategy_var as st
 import log_manager
@@ -7,8 +7,10 @@ import constant as const
 
 data = {}
 log, res, err_log = log_manager.Log().get_logger()
+running_time = 0
 
 def init_data(subject_code):
+    s_time = time.time()
     data[subject_code] = {}
 
     data[subject_code]['상태'] = '대기'
@@ -85,10 +87,14 @@ def init_data(subject_code):
             data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
         '''
 
+    global running_time
+    running_time = running_time + (time.time() - s_time)
+
 def clear_data(subject_code):
     del data[subject_code]
 
 def init_current_candle(subject_code, chart_type, time_unit):
+    s_time = time.time()
     data[subject_code][chart_type][time_unit]['현재캔들']['고가'] = 0
     data[subject_code][chart_type][time_unit]['현재캔들']['저가'] = const.INFINITY
 
@@ -97,8 +103,12 @@ def init_current_candle(subject_code, chart_type, time_unit):
     elif chart_type is const.분차트:
         data[subject_code][chart_type][time_unit]['현재가변동시간'] = '?????'
 
+    global running_time
+    running_time = running_time + (time.time() - s_time)
 
 def push(subject_code, chart_type, time_unit, candle):
+    s_time = time.time()
+
     data[subject_code][chart_type][time_unit]['현재가'].append(candle['현재가'])
     data[subject_code][chart_type][time_unit]['시가'].append(candle['시가'])
     data[subject_code][chart_type][time_unit]['고가'].append(candle['고가'])
@@ -110,11 +120,13 @@ def push(subject_code, chart_type, time_unit, candle):
 
     calc(subject_code, chart_type, time_unit)
 
+    global running_time
+    running_time = running_time + (time.time() - s_time)
 
 def calc(subject_code, chart_type, time_unit):
     if subject.info[subject_code]['전략'] == '파라':
         calc_ma_line(subject_code, chart_type, time_unit)
-        calc_ema_line(subject_code, chart_type, time_unit)
+        #calc_ema_line(subject_code, chart_type, time_unit)
         #calc_ilmok_chart(subject_code, chart_type, time_unit)
 
         if data[subject_code][chart_type][time_unit]['인덱스'] < 5:

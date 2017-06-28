@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import subject
+import time
 import strategy_var as st
 import kiwoom
 import constant as const
@@ -8,8 +9,10 @@ import log_manager
 import chart_manager as chart
 
 log, res, err_log = log_manager.Log().get_logger()
+running_time = 0
 
 def proc():
+    global running_time
     subject_symbol = ''
     start_date = ''
     end_date = ''
@@ -61,6 +64,7 @@ def proc():
 
         test_count = get_simulate_count(subject_symbol) # 총 테스트 횟수 계산
 
+        s_time = time.time()
         for idx in range(test_count):
             for subject_code in subject_codes:
                 ''' 전략변수 설정 '''
@@ -83,6 +87,9 @@ def proc():
                         kw.OnReceiveRealData(subject_code, 현재가, 체결시간)
 
                 chart.clear_data(subject_code)
+
+        running_time = running_time + (time.time() - s_time)
+        log.info('테스트 종료.')
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
 
