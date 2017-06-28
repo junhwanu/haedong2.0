@@ -50,9 +50,6 @@ def drop_table(table_name):
     query = "drop table %s" % table_name
     return exec_query(query)
 
-def drop_table(subject_code, date):
-    return drop_table( '%s_%s' % (subject_code, date) )
-
 def create_table(table_name):
     query = "create table %s select * from root_table" % table_name
     return exec_query(query)
