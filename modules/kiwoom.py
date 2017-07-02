@@ -303,6 +303,12 @@ class Api():
                 log.info("참여 종목 : %s" % subject.info.values())
 
             self.send_request()
+        elif nErrCode == -101:
+            # wait_time = (06:45).to_sec() - time.time()
+            # time.sleep(wait_time)
+            # const.MODE = const.DB_INSERT
+            # DB INSERT CODE
+            pass
         else:
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
             err_log.error('로그인 실패[%s]' % self.parse_error_code(nErrCode))
@@ -388,7 +394,7 @@ class Api():
 
                             if chart_data['현재가변동횟수'] == int(time_unit):
                                 log.debug("수신 된 첫 캔들이 이미 완성된 캔들이므로, 임시 캔들에 추가함.")
-                                chart_data['임새캔들'].append(chart_data['현재캔들'])
+                                chart_data['임시캔들'].append(chart_data['현재캔들'])
                                 chart.init_current_candle(subject_code, chart_type, time_unit)
 
                             for tick in chart_data['임시틱']:
@@ -438,7 +444,17 @@ class Api():
                                 for candle in chart_data['임시캔들']:
                                     chart.push(subject_code, chart_type, time_unit, candle)
 
-                            chart.data[subject_code]['상태'] = '매매가능'
+                            isEnd = True
+                            for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+                                chart_type = chart_config[0]
+                                time_unit = chart_config[1]
+
+                                if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                                    isEnd = False
+                                    break
+
+                            if isEnd:
+                                chart.data[subject_code]['상태'] = '매매가능'
 
                         else:
                             self.request_tick_info(subject_code, time_unit, sPreNext)
@@ -577,7 +593,7 @@ class Api():
 
         try:
             if subject_code not in subject.info:
-                log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
+                #log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
                 return
 
             #res.info("RealData (%s, %s, %s)" % (subject_code, sRealType, sRealData))
@@ -632,7 +648,8 @@ class Api():
                         else:
                             #log.info('%s, %s, %s, %s' % (subject_code, chart_type, time_unit, chart_data['현재캔들']))
                             chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
-                            chart.init_current_candle(subject_code, chart_type, time_unit)
+
+                        chart.init_current_candle(subject_code, chart_type, time_unit)
 
                 elif chart_type == const.분차트:
                     pass

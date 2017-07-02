@@ -59,5 +59,5 @@ def get_table(table_name):
     return exec_query(query, FETCH_ALL)
 
 def get_table_list(subject_symbol, start_date, end_date):
-    query = "show tables where substr(Tables_in_haedong, 1, 2) = '%s' and substr(Tables_in_haedong, (select char_length(Tables_in_haedong)) - 7, 8) between '%s' and '%s'" % (subject_symbol, start_date, end_date)
+    query = "show tables where substr(Tables_in_haedong, 1, %s) = '%s' and substr(Tables_in_haedong, (select char_length(Tables_in_haedong)) - 7, 8) between '%s' and '%s'" % (len(subject_symbol), subject_symbol, start_date, end_date)
     return exec_query(query, FETCH_ALL)
