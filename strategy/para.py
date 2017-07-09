@@ -13,10 +13,11 @@ log, res, err_log = log_manager.Log().get_logger()
 running_time = 0
 
 def is_it_ok(subject_code, current_price):
+
     s_time = time.time()
     global running_time
     try:
-        차트 = get_chart(subject_code)
+        차트 = get_chart(subject_code) # 이거 왜 쓴거임?
 
         ''' 차트 미생성 '''
         for chart_config in st.info[subject_code][파라]['차트']:
@@ -177,7 +178,6 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
 
         i = 차트['인덱스']
 
-
         if (현재플로우 == 상향 and 차트['플로우'][-1] != 차트['플로우'][-2]) or \
                 (현재플로우 == 하향 and 현재가 > 차트[현재SAR]):
             매도수구분 = 매수
@@ -190,16 +190,17 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
             차트['현재플로우'] = 하향  # 현재 플로우 즉시 반영
             차트[현재SAR] = INFINITY
 
+
         ''' 반전시 매매'''
-        if (현재플로우 == 상향 and is_sorted(subject_code, 차트타입, 시간단위) != 상승세) or \
-                (현재플로우 == 하향 and is_sorted(subject_code, 차트타입, 시간단위) != 하락세):
+        if (차트['현재플로우'] == 상향 and is_sorted(subject_code, 차트타입, 시간단위) != 상승세) or \
+                (차트['현재플로우'] == 하향 and is_sorted(subject_code, 차트타입, 시간단위) != 하락세):
             ''' 이동평균선 안맞을 시 매매 안함 '''
             log.debug('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
             return 매매없음
 
         ''' 이전 플로우 수익이 매매불가수익량 이상일 때 매매 안함 '''
-        if (지난플로우[0][추세] == 상향 and (지난플로우[0][마지막SAR] - 지난플로우[0][시작SAR]) >= 차트변수[매매불가수익량]) or \
-            (지난플로우[0][추세] == 하향 and (지난플로우[0][시작SAR] - 지난플로우[0][마지막SAR]) >= 차트변수[매매불가수익량]):
+        if (지난플로우[0][추세] == 상향 and (지난플로우[0][마지막SAR] - 지난플로우[0][시작SAR])*subject.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]) or \
+            (지난플로우[0][추세] == 하향 and (지난플로우[0][시작SAR] - 지난플로우[0][마지막SAR])*subject.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]):
             log.debug("이전 플로우 수익이 %s틱 이상이므로 현재 플로우는 넘어갑니다." % 차트변수[매매불가수익량])
             return false
 
@@ -212,6 +213,7 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
             else:
                 맞틀리스트.append(틀)
 
+
         if 차트['현재플로우'] != 차트['플로우']:
             ''' 반전되었으나, 캔들이 완성되지 않아 아직 SAR 계산은 이루어지지 않음 '''
             if (차트['플로우'][-1] == 상향 and (현재가 - 차트['SAR'][-1]) > 0) \
@@ -223,10 +225,13 @@ def get_mesu_medo_type(subject_code, 현재가, 차트):
             log.debug("틀 5회 연속으로 매매 안함.")
             return false
         elif 맞틀리스트[-4:] == [맞, 틀, 틀, 틀]:
-            log.debug("맞, 틀, 틀, 틀로 매매 안함.")
+            log.debug("[맞, 틀, 틀, 틀]로 매매 안함.")
             return false
-
+        elif 맞틀리스트[-3:] == [맞, 틀, 틀]:
+            log.debug("[맞, 틀, 틀]로 매매 안함.")
+            return false
         return 매도수구분
+
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
         return 매매없음

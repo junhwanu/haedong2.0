@@ -6,7 +6,7 @@ import time
 from PyQt5.QAxContainer import *
 from PyQt5.QtWidgets import *
 
-import chart_manager as chart
+import chart_manager as ctm
 import constant as const
 import contract_manager as cm
 import log_manager
@@ -17,6 +17,7 @@ import subject
 import telepot_manager as tm
 import util
 from log_manager import get_error_msg
+import configparser
 
 log = None
 res = None
@@ -30,6 +31,8 @@ class Api():
     app = None
     account_pwd_input = False
     account = ""
+    chart = None
+    stv = None
     누적수익 = 0
 
     def __init__(self):
@@ -46,6 +49,8 @@ class Api():
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
+            self.chart = ctm.Chart_Manger()
+
             if self.connect() == 0:
                 self.app.exec_()
 
@@ -55,6 +60,11 @@ class Api():
 
         else:
             log.info("MODE:"+str(const.MODE))
+
+    def set_strategy_var(self):
+        # 전략 변수 Config 불러오기
+        config = configparser.RawConfigParser()
+        pass
 
     ####################################################
     # Interface Methods
@@ -263,6 +273,13 @@ class Api():
             self.input_value = []
             self.req.append(request_config)
 
+            now = time.localtime()
+            if const.MODE == const.REAL and \
+                    ((now.tm_wday == 5 and util.get_time(0, None) > 600) or \
+                    (now.tm_wday == 6) ):
+                time.sleep(0.25)
+                self.send_request()
+
         except Exception as err:
             log.error(get_error_msg(err))
 
@@ -273,7 +290,6 @@ class Api():
         sys.exit()
 
     ####################################################
-
     # Control Event Handlers
     ####################################################
 
@@ -348,7 +364,7 @@ class Api():
                         del subject.info[subject_symbol]
                         del st.info[subject_symbol]
 
-                        chart.init_data(subject_code)
+                        self.chart.init_data(subject_code)
                         # 초기 데이터 요청
                         for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
                             type = chart_config[0]
@@ -373,7 +389,7 @@ class Api():
                         data_str = self.ocx.dynamicCall("GetCommFullData(QString, QString, int)", sTrCode,
                                                         sRecordName, 0)
 
-                        chart_data = chart.data[subject_code][chart_type][time_unit]  # 차트 타입과 시간단위에 맞는 차트 불러옴
+                        chart_data = self.chart.data[subject_code][chart_type][time_unit]  # 차트 타입과 시간단위에 맞는 차트 불러옴
 
                         if len(chart_data['임시데이터']) == 0:
                             ''' 가장 처음 데이터가 수신 되었을 때 '''
@@ -395,7 +411,7 @@ class Api():
                             if chart_data['현재가변동횟수'] == int(time_unit):
                                 log.debug("수신 된 첫 캔들이 이미 완성된 캔들이므로, 임시 캔들에 추가함.")
                                 chart_data['임시캔들'].append(chart_data['현재캔들'])
-                                chart.init_current_candle(subject_code, chart_type, time_unit)
+                                self.chart.init_current_candle(subject_code, chart_type, time_unit)
 
                             for tick in chart_data['임시틱']:
                                 ''' 첫 번째 데이터 수신 전 해당 차트로부터 들어온 Tick들 처리 '''
@@ -413,7 +429,7 @@ class Api():
                                     if chart_data['인덱스'] == -1:
                                         chart_data['임시캔들'].append(chart_data['현재캔들'])
                                     else:
-                                        chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
+                                        self.chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
                         else:
                             ''' 데이터 수신 중간 '''
                             log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
@@ -437,24 +453,24 @@ class Api():
                                 candle['영업일자'] = str(chart_data['임시데이터'][current_idx + 6])
                                 current_idx -= 7
 
-                                chart.push(subject_code, chart_type, time_unit, candle)
+                                self.chart.push(subject_code, chart_type, time_unit, candle)
 
                             if len(chart_data['임시캔들']) > 0:
                                 log.info("데이터 수신 중 완성된 임시캔들들 Push.")
                                 for candle in chart_data['임시캔들']:
-                                    chart.push(subject_code, chart_type, time_unit, candle)
+                                    self.chart.push(subject_code, chart_type, time_unit, candle)
 
                             isEnd = True
                             for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
                                 chart_type = chart_config[0]
                                 time_unit = chart_config[1]
 
-                                if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                                if self.chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
                                     isEnd = False
                                     break
 
                             if isEnd:
-                                chart.data[subject_code]['상태'] = '매매가능'
+                                self.chart.data[subject_code]['상태'] = '매매가능'
 
                         else:
                             self.request_tick_info(subject_code, time_unit, sPreNext)
@@ -626,7 +642,7 @@ class Api():
                 chart_type = chart_config[0]
                 time_unit = chart_config[1]
 
-                chart_data = chart.data[subject_code][chart_type][time_unit]
+                chart_data = self.chart.data[subject_code][chart_type][time_unit]
                 if chart_type == const.틱차트:
                     if len(chart_data['현재캔들'].keys()) is 0:
                         chart_data['임시틱'].append( [ current_price, current_time ])
@@ -647,9 +663,9 @@ class Api():
                             chart_data['임시캔들'].append(chart_data['현재캔들'])
                         else:
                             #log.info('%s, %s, %s, %s' % (subject_code, chart_type, time_unit, chart_data['현재캔들']))
-                            chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
+                            self.chart.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
 
-                        chart.init_current_candle(subject_code, chart_type, time_unit)
+                        self.chart.init_current_candle(subject_code, chart_type, time_unit)
 
                 elif chart_type == const.분차트:
                     pass
@@ -667,10 +683,12 @@ class Api():
 
                 if order_contents['신규주문']:
                     res.info('신규주문 : %s' % order_contents)
-                    #self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
+                    res.info("체결시간:%s" % chart_data['체결시간'][-1])
+                    self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
 
             ''' 전략 선택 '''
             stm.strategy_selector(subject_code, current_price)
+
 
         except Exception as err:
             log.error(get_error_msg(err))
