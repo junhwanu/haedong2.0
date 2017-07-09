@@ -25,13 +25,17 @@ if __name__ == "__main__":
     logger.init(const.MAIN_DIR)
     log, res, err_log = logger.get_logger()
 
-    log.info("실제투자(1), 테스트(2)")
+
     while(True):
-        const.MODE = int(input())
+
+        if len(sys.argv) == 1:
+            log.info("실제투자(1), 테스트(2)")
+            const.MODE = int(input())
+        else:
+            const.MODE = int(sys.argv[1])
 
         if const.MODE is const.REAL:
             kw_api = kiwoom.Api()
-
             break
         elif const.MODE is const.TEST:
             tester.proc()
