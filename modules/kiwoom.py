@@ -17,7 +17,6 @@ import subject
 import telepot_manager as tm
 import util
 from log_manager import get_error_msg
-import configparser
 
 log = None
 res = None
@@ -49,7 +48,8 @@ class Api():
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
-            self.chart = ctm.Chart_Manger()
+            self.set_strategy_config()
+            self.chart = ctm.Chart_Manger(self.stv)
 
             if self.connect() == 0:
                 self.app.exec_()
@@ -61,9 +61,9 @@ class Api():
         else:
             log.info("MODE:"+str(const.MODE))
 
-    def set_strategy_var(self):
-        # 전략 변수 Config 불러오기
-        config = configparser.RawConfigParser()
+    def set_strategy_config(self):
+        self.stv = st.Strategy_Var()
+        stm.set_strategy_var(self.stv)
         pass
 
     ####################################################
@@ -360,13 +360,13 @@ class Api():
                     if subject_symbol in subject.info:
                         log.info("금일 %s의 종목코드는 %s 입니다." % (subject.info[subject_symbol]["종목명"], subject_code))
                         subject.info[subject_code] = subject.info[subject_symbol]
-                        st.info[subject_code] = st.info[subject_symbol]
+                        self.stv.info[subject_code] = self.stv.info[subject_symbol]
                         del subject.info[subject_symbol]
-                        del st.info[subject_symbol]
+                        del self.stv.info[subject_symbol]
 
                         self.chart.init_data(subject_code)
                         # 초기 데이터 요청
-                        for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+                        for chart_config in self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
                             type = chart_config[0]
                             time_unit = chart_config[1]
 
@@ -435,7 +435,7 @@ class Api():
                             log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
                             chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
 
-                        if len(chart_data['임시데이터']) / 7 > st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                        if len(chart_data['임시데이터']) / 7 > self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                         #if True:
                             ''' 데이터 수신 완료 '''
 
@@ -461,11 +461,11 @@ class Api():
                                     self.chart.push(subject_code, chart_type, time_unit, candle)
 
                             isEnd = True
-                            for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+                            for chart_config in self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
                                 chart_type = chart_config[0]
                                 time_unit = chart_config[1]
 
-                                if self.chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['초기캔들수']:
+                                if self.chart.data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                                     isEnd = False
                                     break
 
@@ -638,7 +638,7 @@ class Api():
 
 
             ''' 캔들 생성 '''
-            for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+            for chart_config in st.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
                 chart_type = chart_config[0]
                 time_unit = chart_config[1]
 

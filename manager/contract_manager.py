@@ -32,7 +32,7 @@ def add_contract(order_info):
             c.종목코드 = order_info['종목코드']
             c.매도수구분 = order_info['매도수구분']
 
-            if subject.info[c.종목코드]['전략'] == '파라':
+            if subject.info[c.종목코드]['전략'] == 파라:
                 c.익절가, c.손절가 = para.get_loss_cut()
                 if c.매도수구분 == 매수:
                     for i in range(len(c.익절가)):

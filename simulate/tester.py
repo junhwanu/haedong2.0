@@ -76,7 +76,7 @@ def proc():
                 log.info('기간 : %s ~ %s' % (table_list[subject_code][0], table_list[subject_code][-1]))
 
                 chart.init_data(subject_code)
-                for chart_config in st.info[subject_code][subject.info[subject_code]['전략']]['차트']:
+                for chart_config in st.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
                     chart_type = chart_config[0]
                     time_unit = chart_config[1]
                     chart.init_current_candle(subject_code, chart_type, time_unit)  # kiwoom.onReceiveRealData에서 len('현재캔들') == 0이면 캔들을 생성 안하므로 하나 추가

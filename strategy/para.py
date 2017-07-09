@@ -20,11 +20,11 @@ def is_it_ok(subject_code, current_price):
         차트 = get_chart(subject_code) # 이거 왜 쓴거임?
 
         ''' 차트 미생성 '''
-        for chart_config in st.info[subject_code][파라]['차트']:
+        for chart_config in st.info[subject_code][파라][차트]:
             chart_type = chart_config[0]
             time_unit = chart_config[1]
 
-            if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][파라]['차트변수'][chart_type][time_unit]['초기캔들수']:
+            if chart.data[subject_code][chart_type][time_unit]['인덱스'] < st.info[subject_code][파라][차트변수][chart_type][time_unit][초기캔들수]:
                 running_time = running_time + (time.time() - s_time)
                 return false
 
@@ -159,7 +159,7 @@ def is_it_sell(subject_code, current_price):
 
 def get_chart(subject_code):
     차트 = []
-    for 차트변수 in st.info[subject_code][파라]['차트']:
+    for 차트변수 in st.info[subject_code][파라][차트]:
         차트타입 = 차트변수[0]
         시간단위 = 차트변수[1]
 

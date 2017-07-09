@@ -2,6 +2,11 @@
 import os
 
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))[:-9]
+CONFIG_PATH = MAIN_DIR + '/config'
+
+## config
+ST_CONFIG = 'STRATEGY_CONFIG'
+CHART_TYPE = 'CHART_TYPE'
 
 DB_SERVER_ADDR = "211.253.28.132"
 DB_USER_ID = "root"
@@ -20,9 +25,9 @@ FETCH_MANY = 2
 CURSOR_TUPLE = 0
 CURSOR_DICT = 1
 
-틱차트 = "틱차트"
-분차트 = "분차트"
-일차트 = "일차트"
+틱차트 = "TICK"
+분차트 = "MIN"
+일차트 = "DAY"
 
 매도 = "신규매도"
 매수 = "신규매수"
@@ -36,13 +41,19 @@ CURSOR_DICT = 1
 추세 = "추세"
 시작SAR = "시작SAR"
 마지막SAR = "마지막SAR"
-매매불가수익량 = "매매불가수익량"
+매매불가수익량 = "NOT_TRADE_PROFIT"
 맞 = "맞"
 틀 = "틀"
-청산단계별드리블틱 = "청산단계별드리블틱"
-
-파라 = "파라"
+청산단계별드리블틱 = "DRIBLE_TICK"
+차트 = "CHART"
+차트변수 = "CHART_VAR"
+파라 = "PARA"
 현재SAR = "현재SAR"
+
+이동평균선 = "MA"
+INIT_AF = 'INIT_AF'
+MAX_AF = 'MAX_AF'
+초기캔들수 = 'INIT_CANDLE_COUNT'
 
 분할 = 0
 증가 = 1

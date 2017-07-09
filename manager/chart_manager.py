@@ -10,11 +10,12 @@ common_data = {}
 
 class Chart_Manger():
     data = {}
+    stv = None
     log, res, err_log = log_manager.Log().get_logger()
     running_time = 0
 
-    def __init__(self):
-        pass
+    def __init__(self, stv):
+        self.stv = stv
 
     def init_data(self, subject_code):
         try:
@@ -23,8 +24,8 @@ class Chart_Manger():
             self.data[subject_code] = {}
             self.data[subject_code]['상태'] = '대기'
 
-            if subject.info[subject_code]['전략'] == '파라':
-                for chart_config in st.info[subject_code]['파라']['차트']:
+            if subject.info[subject_code]['전략'] == const.파라:
+                for chart_config in self.stv.info[subject_code][const.파라][const.차트]:
                     chart_type = chart_config[0]
                     time_unit = chart_config[1]
 
@@ -61,12 +62,12 @@ class Chart_Manger():
                         self.data[subject_code][chart_type][time_unit]['시간단위'] = time_unit
 
                         self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
-                        self.data[subject_code][chart_type][time_unit]['이동평균선'] = {}
-                        self.data[subject_code][chart_type][time_unit]['이동평균선']['일수'] = st.info[subject_code][subject.info[subject_code]['전략']]['차트변수'][chart_type][time_unit]['이동평균선']
+                        self.data[subject_code][chart_type][time_unit][const.이동평균선] = {}
+                        self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수'] = self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.이동평균선]
                         self.data[subject_code][chart_type][time_unit]['지수이동평균선'] = {}
 
-                        for days in self.data[subject_code][chart_type][time_unit]['이동평균선']['일수']:
-                            self.data[subject_code][chart_type][time_unit]['이동평균선'][days] = []
+                        for days in self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수']:
+                            self.data[subject_code][chart_type][time_unit][const.이동평균선][days] = []
                             self.data[subject_code][chart_type][time_unit]['지수이동평균선'][days] = []
 
                         self.data[subject_code][chart_type][time_unit]['볼린저밴드'] = {}
@@ -154,7 +155,7 @@ class Chart_Manger():
 
     def calc(self, subject_code, chart_type, time_unit):
         try:
-            if subject.info[subject_code]['전략'] == '파라':
+            if subject.info[subject_code]['전략'] == const.파라:
                 self.calc_ma_line(subject_code, chart_type, time_unit)
                 #calc_ema_line(subject_code, chart_type, time_unit)
                 #calc_ilmok_chart(subject_code, chart_type, time_unit)
@@ -174,21 +175,21 @@ class Chart_Manger():
         '''
         이동평균선 계산
         '''
-        for days in self.data[subject_code][chart_type][time_unit]['이동평균선']['일수']:
+        for days in self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수']:
             if self.data[subject_code][chart_type][time_unit]['인덱스'] >= days - 1:
                 avg = sum(
                     self.data[subject_code][chart_type][time_unit]['현재가'][
                     self.data[subject_code][chart_type][time_unit]['인덱스'] - days + 1: self.data[subject_code][chart_type][time_unit][
                                                                                      '인덱스'] + 1]) / days
-                self.data[subject_code][chart_type][time_unit]['이동평균선'][days].append(avg)
+                self.data[subject_code][chart_type][time_unit][const.이동평균선][days].append(avg)
             else:
-                self.data[subject_code][chart_type][time_unit]['이동평균선'][days].append(None)
+                self.data[subject_code][chart_type][time_unit][const.이동평균선][days].append(None)
 
     def calc_ema_line(self, subject_code, chart_type, time_unit):
         '''
         지수이동평균선 계산
         '''
-        for days in self.data[subject_code][chart_type][time_unit]['이동평균선']['일수']:
+        for days in self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수']:
             if self.data[subject_code][chart_type][time_unit]['인덱스'] >= days - 1:
                 if self.data[subject_code][chart_type][time_unit]['인덱스'] == days - 1:
                     avg = sum(self.data[subject_code][chart_type][time_unit]['현재가'][
@@ -255,7 +256,7 @@ class Chart_Manger():
 
     def init_sar(self, subject_code, chart_type, time_unit):
         ep = self.data[subject_code][chart_type][time_unit]['EP']
-        af = st.info[subject_code]['파라']['차트변수'][chart_type][time_unit]['INIT_AF']
+        af = self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.INIT_AF]
         idx = self.data[subject_code][chart_type][time_unit]['인덱스']
 
         temp_high_price_list = []
@@ -298,8 +299,8 @@ class Chart_Manger():
         ep = self.data[subject_code][chart_type][time_unit]['EP']
         temp_flow = self.data[subject_code][chart_type][time_unit]['플로우'][-1]
         af = self.data[subject_code][chart_type][time_unit]['AF']
-        init_af = st.info[subject_code]['파라']['차트변수'][chart_type][time_unit]['INIT_AF']
-        max_af = st.info[subject_code]['파라']['차트변수'][chart_type][time_unit]['MAX_AF']
+        init_af = self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.INIT_AF]
+        max_af = self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.MAX_AF]
         index = self.data[subject_code][chart_type][time_unit]['인덱스']
         temp_sar = sar
 

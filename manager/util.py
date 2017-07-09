@@ -30,8 +30,8 @@ def get_time(add_min, subject_code):
         current_time = current_hour * 100 + current_min
 
     elif const.MODE == const.TEST:  # 테스트
-        chart_type = st.info[subject_code][ subject.info[subject_code]['전략'] ]['차트'][0][0]
-        time_unit = st.info[subject_code][ subject.info[subject_code]['전략'] ]['차트'][0][1]
+        chart_type = st.info[subject_code][ subject.info[subject_code]['전략'] ][const.차트][0][0]
+        time_unit = st.info[subject_code][ subject.info[subject_code]['전략'] ][const.차트][0][1]
         chart_data = chart.data[subject_code][chart_type][time_unit]
 
         current_hour = int(str(chart_data['체결시간'][-1])[8:10])

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import screen
-
+from constant import *
 info = {
     "GC" : {
         "종목명": "GOLD",
@@ -10,6 +10,6 @@ info = {
         "화면번호": screen.S9998,
         "마감시간": '0600',
         "시작시간": '0700',
-        "전략" : '파라'
+        "전략" : 파라
     }
 }
