@@ -32,31 +32,32 @@ class Contract_Manager():
 
 
             if subject_code in self.contract_list: #가지고 있는 계약이면
+                c = self.contract_list[subject_code]
 
                 self.log.info("%s 종목은 이미 %s계약 보유 중 입니다" % (subject_code, self.contract_list[subject_code]['보유수량']))
                 self.log.info("%s 종목 신규 계약 %개 추가 합니다." % (subject_code, int(order_info['신규수량'])))
 
                 #정확한 체결가를 위해 체결가 다시 계산
-                self.contract_list[subject_code]['체결가'] = ((self.contract_list[subject_code]['체결가']*self.contract_list[subject_code]['보유수량']) \
+                c['체결가'] = ((c['체결가']*c['보유수량']) \
                                                           + (order_info['체결표시가격']*int(order_info['신규수량']))) \
-                                                                  / (self.contract_list[subject_code]['보유수량'] + int(order_info['신규수량']))
-                self.contract_list[subject_code]['체결가'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
+                                                                  / (c['보유수량'] + int(order_info['신규수량']))
+                c['체결가'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
 
 
                 if subject.info[subject_code]['상태'] == '매매시도중' or subject.info[subject_code]['상태'] == '매수중' \
                         or subject.info[subject_code]['상태'] == '매도중':
 
-                    if self.contract_list[subject_code]['계약타입'][SAFE] > self.contract_list[subject_code]['계약타입'][DRIBBLE]:
+                    if c['계약타입'][SAFE] > c['계약타입'][DRIBBLE]:
                         safe_num = int(int(order_info['신규수량']) / 2)
                         dribble_num = int(order_info['신규수량']) - safe_num
                     else:
                         dribble_num = int(int(order_info['신규수량']) / 2)
                         safe_num = int(order_info['신규수량']) - dribble_num
 
-                    self.contract_list[subject_code]['계약타입'][SAFE] += safe_num
-                    self.contract_list[subject_code]['계약타입'][DRIBBLE] += dribble_num
+                    c['계약타입'][SAFE] += safe_num
+                    c['계약타입'][DRIBBLE] += dribble_num
 
-                    self.contract_list[subject_code]['보유수량'] = self.contract_list[subject_code]['보유수량'] + safe_num + dribble_num
+                    c['보유수량'] = c['보유수량'] + safe_num + dribble_num
 
                     self.log.info('종목코드 : ' + subject_code + ', 목표달성청산수량 ' + str(safe_num) + '개, 드리블수량 ' + str(
                         dribble_num) + '개 추가.')
@@ -66,38 +67,39 @@ class Contract_Manager():
             else: #신규 계약 이면
                 self.log.info("%s 신규 계약 추가: %s" % (subject_code, order_info))
                 self.contract_list[subject_code] = {}
+                c = self.contract_list[subject_code]
 
                 safe_num = int(int(order_info['신규수량']) / 2)
                 dribble_num = int(order_info['신규수량']) - safe_num
 
-                self.contract_list[subject_code]['보유수량'] = int(order_info['신규수량'])
-                self.contract_list[subject_code]['계약타입'] = {}
-                self.contract_list[subject_code]['계약타입'][SAFE] = safe_num
-                self.contract_list[subject_code]['계약타입'][DRIBBLE] = dribble_num
-                self.contract_list[subject_code]['체결가'] = float(order_info['체결표시가격'])
-                self.contract_list[subject_code]['매도수구분'] = order_info['매도수구분']
-                self.contract_list[subject_code]['전략'] = subject.info[subject_code]['전략']
+                c['보유수량'] = int(order_info['신규수량'])
+                c['계약타입'] = {}
+                c['계약타입'][SAFE] = safe_num
+                c['계약타입'][DRIBBLE] = dribble_num
+                c['체결가'] = float(order_info['체결표시가격'])
+                c['매도수구분'] = order_info['매도수구분']
+                c['전략'] = subject.info[subject_code]['전략']
 
                 if subject.info[subject_code]['전략'] == '파라':
 
                     order_info['익절틱'], order_info['손절틱'] = self.get_loss_cut(subject.info[subject_code]['전략'])
-                    self.contract_list[subject_code]['익절가'] = []
-                    self.contract_list[subject_code]['손절가'] = []
+                    c['익절가'] = []
+                    c['손절가'] = []
 
                     if order_info['매도수구분'] == 매도:
                         for i in range(len(order_info['익절틱'])):
-                            self.contract_list[subject_code]['익절가'].append(self.contract_list[subject_code]['체결가'] - order_info['익절틱'][i] * \
+                            c['익절가'].append(c['체결가'] - order_info['익절틱'][i] * \
                                                                                     subject.info[subject_code]['단위'])
                         for i in range(len(order_info['손절틱'])):
-                            self.contract_list[subject_code]['손절가'].append(self.contract_list[subject_code]['체결가'] + order_info['손절틱'][i] * \
+                            c['손절가'].append(c['체결가'] + order_info['손절틱'][i] * \
                                                                                     subject.info[subject_code]['단위'])
 
                     elif order_info['매도수구분'] == 매수:
                         for i in range(len(order_info['익절틱'])):
-                            self.contract_list[subject_code]['익절가'] = self.contract_list[subject_code]['체결가'] + order_info['익절틱'][i] * \
+                            c['익절가'] = c['체결가'] + order_info['익절틱'][i] * \
                                                                                 subject.info[subject_code]['단위']
                         for i in range(len(order_info['손절틱'])):
-                            self.contract_list[subject_code]['손절가'] = self.contract_list[subject_code]['체결가'] - order_info['손절틱'][i] * \
+                            c['손절가'] = c['체결가'] - order_info['손절틱'][i] * \
                                                                                 subject.info[subject_code]['단위']
 
                     self.log.info('신규계약 추가, 종목코드 : ' + subject_code + ', 목표달성청산수량 ' + str(safe_num) + '개, 드리블수량 ' + str(dribble_num) + '개 추가.')
