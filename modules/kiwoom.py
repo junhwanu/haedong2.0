@@ -16,6 +16,7 @@ import strategy_var as st
 import subject
 import telepot_manager as tm
 import util
+import auto_login
 from log_manager import get_error_msg
 import configparser
 
@@ -82,6 +83,13 @@ class Api():
             rtn = self.ocx.dynamicCall("CommConnect(1)")
             if rtn == 0:
                 log.info("연결 성공")
+
+
+                # auto login
+                lg = auto_login.Login()
+                lg.start()
+
+
             else:
                 log.info("연결 실패")
 
