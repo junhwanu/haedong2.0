@@ -50,6 +50,7 @@ class Api():
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
             self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
+            self.set_strategy_var()
             self.chart = ctm.Chart_Manger()
 
             if self.connect() == 0:
@@ -64,7 +65,7 @@ class Api():
 
     def set_strategy_var(self):
         # 전략 변수 Config 불러오기
-        config = configparser.RawConfigParser()
+        config = configparser.ConfigParser()
         pass
 
     ####################################################
