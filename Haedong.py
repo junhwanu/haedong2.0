@@ -5,6 +5,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/manager');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/net');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/simulate');
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/strategy');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/chart');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/var');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/viewer');
@@ -16,6 +17,7 @@ import tester
 import kiwoom
 import chart_manager as chart
 import para
+import health_server
 
 running_time = 0
 
@@ -26,12 +28,25 @@ if __name__ == "__main__":
     logger.init(const.MAIN_DIR)
     log, res, err_log = logger.get_logger()
 
-    log.info("실제투자(1), 테스트(2)")
+
     while(True):
-        const.MODE = int(input())
+
+        if len(sys.argv) == 1:
+            log.info("실제투자(1), 테스트(2)")
+            const.MODE = int(input())
+        else:
+            const.MODE = int(sys.argv[1])
 
         if const.MODE is const.REAL:
+            # health server run
+            health_server_thread = health_server.HealthConnectManager()
+            health_server_thread.start()
+
             kw_api = kiwoom.Api()
+
+            health_server_thread.close()
+            health_server_thread.join(5)
+            print("헬스 체크서버 종료")
 
             break
         elif const.MODE is const.TEST:
