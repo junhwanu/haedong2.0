@@ -28,7 +28,7 @@ if __name__ == "__main__":
     logger.init(const.MAIN_DIR)
     log, res, err_log = logger.get_logger()
 
-
+    input()
     while(True):
 
         if len(sys.argv) == 1:

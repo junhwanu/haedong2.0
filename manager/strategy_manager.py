@@ -2,38 +2,13 @@
 import subject
 import log_manager
 
-import para
+from para import Para
 from constant import *
 import configparser
-import strategy_var as st
 import json
 
 log, res, err_log = log_manager.Log().get_logger()
 
-def is_it_ok(subject_code, current_price):
-    try:
-        if subject.info[subject_code]['전략'] == 파라:
-            return para.is_it_ok(subject_code, current_price)
-        else:
-            err_log.error('%s 종목, 전략 선택 에러' % subject_code)
-            return {'신규주문': False}
-
-    except Exception as err:
-        err_log.error(log_manager.get_error_msg(err))
-
-def is_it_sell(subject_code, current_price):
-    try:
-        if subject.info[subject_code]['전략'] == 파라:
-            return para.is_it_sell(subject_code, current_price)
-        else:
-            err_log.error('%s 종목, 전략 선택 에러' % subject_code)
-            return {'신규주문': False}
-
-    except Exception as err:
-        err_log.error(log_manager.get_error_msg(err))
-
-def strategy_selector(subject_code, current_price):
-    pass
 
 def set_strategy_var(stv):
     try:
@@ -75,6 +50,16 @@ def set_strategy_var(stv):
                     stv.info[subject_symbol][strategy][차트변수][type][time_unit][MAX_AF] = config.getfloat(section_str, MAX_AF)
                     stv.info[subject_symbol][strategy][차트변수][type][time_unit][초기캔들수] = config.getint(section_str, 초기캔들수)
 
-
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
+
+def get_strategy(subject_code):
+    strategy = None
+    if subject.info[subject_code][전략] == 파라:
+        strategy = Para()
+    else:
+        err_log.error("전략 설정 에러.")
+    return strategy
+
+def strategy_selector(subject_code, current_price):
+    pass

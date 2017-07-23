@@ -11,13 +11,14 @@ import constant as const
 import contract_manager as cm
 import log_manager
 import screen
-import strategy_manager as stm
+import strategy_manager
 import strategy_var as st
 import subject
 import telepot_manager as tm
 import util
 import auto_login
 from log_manager import get_error_msg
+import global_var
 
 log = None
 res = None
@@ -32,8 +33,10 @@ class Api():
     account_pwd_input = False
     account = ""
     chart = None
+    stm = {}
     stv = None
     누적수익 = 0
+    subject_code = ''
 
     def __init__(self, _stv = None):
         super(Api, self).__init__()
@@ -66,7 +69,7 @@ class Api():
 
     def set_strategy_config(self):
         self.stv = st.Strategy_Var()
-        stm.set_strategy_var(self.stv)
+        strategy_manager.set_strategy_var(self.stv)
         pass
 
     ####################################################
@@ -373,6 +376,8 @@ class Api():
                         self.stv.info[subject_code] = self.stv.info[subject_symbol]
                         del subject.info[subject_symbol]
                         del self.stv.info[subject_symbol]
+
+                        self.stm[subject_code] = strategy_manager.get_strategy(subject_code)
 
                         self.chart.init_data(subject_code)
                         # 초기 데이터 요청
@@ -682,14 +687,14 @@ class Api():
 
             ''' 계약 청산 '''
             if cm.get_contract_count(subject_code) > 0:
-                sell_contents = stm.is_it_sell(subject_code, current_price)
+                sell_contents = self.stm[subject_code].is_it_sell(subject_code, current_price)
 
                 if sell_contents['신규주문']:
                     self.send_order(sell_contents['매도수구분'], subject_code, sell_contents['수량'])
 
             ''' 매매 진입 '''
             if cm.get_contract_count(subject_code) == 0:
-                order_contents = stm.is_it_ok(subject_code, current_price)
+                order_contents = self.stm[subject_code].is_it_ok(subject_code, current_price)
 
                 if order_contents['신규주문']:
                     res.info('신규주문 : %s' % order_contents)
@@ -697,7 +702,7 @@ class Api():
                     self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
 
             ''' 전략 선택 '''
-            stm.strategy_selector(subject_code, current_price)
+            strategy_manager.strategy_selector(subject_code)
 
 
         except Exception as err:

@@ -10,12 +10,15 @@ import chart_manager as chart
 import configparser
 import json
 from strategy_var import Strategy_Var
-from multiprocessing import Process
+from multiprocessing import Process, Queue
+import subprocess
 
 log, res, err_log = log_manager.Log().get_logger()
 running_time = 0
+result = []
 
-def simulate(kw):
+
+def simulate(kw, result):
     chart_data = kw.chart.data
     stv_info = kw.stv.info
     subject_list = stv_info.keys()
@@ -26,7 +29,11 @@ def simulate(kw):
         time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
 
     for idx in range(0, chart_data):
+        '''
+        
+        '''
         pass
+
 
 def proc():
     global running_time
@@ -81,6 +88,7 @@ def proc():
 
         stv_table, cur_table = create_simulater_var_table()  # 총 테스트 횟수 계산
 
+        label = subprocess.check_output(["git", "describe", "--always"]) # current git hash
         procs = []
         while True:
             stv = calc_strategy_var(cur_table)
