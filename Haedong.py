@@ -43,6 +43,6 @@ if __name__ == "__main__":
     running_time = time.time() - s_time
 
     log.info("Total running time : %s" % running_time)
-    log.info("chart_manager running time : %s, %s%s" % (chart.running_time, round(chart.running_time * 100 / running_time, 2), '%'))
+#    log.info("chart_manager running time : %s, %s%s" % (chart.running_time, round(chart.running_time * 100 / running_time, 2), '%'))
     log.info("para running time : %s, %s%s" % (para.running_time, round(para.running_time * 100 / running_time, 2), '%'))
     log.info("db test running time : %s, %s%s" % (tester.running_time, round(tester.running_time * 100 / running_time, 2), '%'))

@@ -7,9 +7,26 @@ import constant as const
 from db_manager import *
 import log_manager
 import chart_manager as chart
+import configparser
+import json
+from strategy_var import Strategy_Var
+from multiprocessing import Process
 
 log, res, err_log = log_manager.Log().get_logger()
 running_time = 0
+
+def simulate(kw):
+    chart_data = kw.chart.data
+    stv_info = kw.stv.info
+    subject_list = stv_info.keys()
+    chart_type = {}
+    time_unit = {}
+    for subject_code in subject_list:
+        chart_type[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][0]
+        time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
+
+    for idx in range(0, chart_data):
+        pass
 
 def proc():
     global running_time
@@ -62,12 +79,27 @@ def proc():
             for table_name in table_list[subject_code]:
                 data[subject_code].append(get_table(table_name))
 
-        test_count = get_simulate_count(subject_symbol) # 총 테스트 횟수 계산
+        stv_table, cur_table = create_simulater_var_table()  # 총 테스트 횟수 계산
 
+        procs = []
+        while True:
+            stv = calc_strategy_var(cur_table)
+            print(stv.info)
+            kw = kiwoom.Api(stv)
+            '''
+            process = Process(target=simulate(), args=(kw,))
+            procs.append(process)
+            process.start()
+            '''
+            if increase_the_number_of_digits(stv_table, cur_table) == False: break
+
+        #for process in procs:
+        #    process.join()
+
+        '''
         s_time = time.time()
-        for idx in range(test_count):
+        for idx in range(0):
             for subject_code in subject_codes:
-                ''' 전략변수 설정 '''
                 set_simulate_config(subject_code)
 
                 kw = kiwoom.Api()
@@ -89,21 +121,190 @@ def proc():
                 chart.clear_data(subject_code)
 
         running_time = running_time + (time.time() - s_time)
+        '''
         log.info('테스트 종료.')
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
 
+
 def parse_tick(tick):
     return tick[0], tick[1], tick[2]
 
-def get_simulate_count(subject_symbol):
+def increase_the_number_of_digits(max_array, cur_array):
+    cur_array[-1] += 1
+    for i in range(len(cur_array)-1 , -1, -1):
+        if cur_array[i] > max_array[i]:
+            if i == 0:
+                return False
+            cur_array[i] = 0
+            cur_array[i-1] += 1
+        else: break
+    return True
+
+def calc_divide_count(start, end, interval):
+    ''' [10, 40, 5] 일 경우 6을 return 해주는 코드, [0, 0, 0]이면 1이아니라 0을 리턴한다.
+        테스트 stv의 max_array를 만들기 위해 사용 됨 '''
+    if start == end: return 0
+    if interval == 0: return 0
+    return int((end - start) / interval)
+
+def get_divide_value(sei_list, index):
+    ''' start, end, interval list = sei_list '''
+    return sei_list[0] + (sei_list[2] * index)
+
+def calc_strategy_var(_cur_array):
+
     try:
-        return 1
+        cur_array = _cur_array[:]
+        # 전략 변수 Config 불러오기
+        config = configparser.RawConfigParser()
+        config.read(CONFIG_PATH + '/tester_var.cfg')
+        stv = Strategy_Var()
+
+        for subject_code in subject.info.keys():
+            subject_symbol = subject_code[:2]
+
+            if subject_symbol not in stv.info:
+                stv.info[subject_symbol] = {}
+
+            strategy = config.get(ST_CONFIG, subject_symbol)
+            stv.info[subject_symbol][strategy] = {}
+
+            stv.info[subject_symbol][strategy][차트] = []
+            stv.info[subject_symbol][strategy][차트변수] = {}
+            stv.info[subject_symbol][strategy][차트변수][틱차트] = {}
+            stv.info[subject_symbol][strategy][차트변수][분차트] = {}
+
+            if strategy == 파라:
+                stv.info[subject_symbol][strategy][차트변수][매매불가수익량] = get_divide_value(json.loads(config.get(subject_symbol, 매매불가수익량)), cur_array.pop(0))
+                tmp_list = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
+                stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱] = []
+                for list in tmp_list:
+                    stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱].append(get_divide_value(list, cur_array.pop(0)))
+
+            ## subject_symbol의 config 불러옴
+            chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+
+            for chart_type in chart_types:
+                type = chart_type.split('_')[0]
+                time_unit = chart_type.split('_')[1]
+
+                section_str = subject_symbol + '_' + chart_type
+                stv.info[subject_symbol][strategy][차트변수][type][time_unit] = {}
+                stv.info[subject_symbol][strategy][차트].append( [ str(type), str(time_unit) ] )
+                if strategy == 파라:
+                    tmp_list = json.loads(config.get(section_str, 이동평균선))
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선] = []
+                    for list in tmp_list:
+                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선].append(get_divide_value(list, cur_array.pop(0)))
+
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][INIT_AF] = get_divide_value(
+                        json.loads(config.get(section_str, INIT_AF)), cur_array.pop(0))
+
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][MAX_AF] = get_divide_value(
+                        json.loads(config.get(section_str, MAX_AF)), cur_array.pop(0))
+
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][초기캔들수] = get_divide_value(
+                        json.loads(config.get(section_str, 초기캔들수)), cur_array.pop(0))
+
+        return stv
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
 
-def set_simulate_config(subject_code):
+
+def create_simulater_var_table():
     try:
-        pass
+        max_array = []
+        cur_array = []
+        # 전략 변수 Config 불러오기
+        config = configparser.RawConfigParser()
+        config.read(CONFIG_PATH + '/tester_var.cfg')
+
+        for subject_code in subject.info.keys():
+            subject_symbol = subject_code[:2]
+
+            strategy = config.get(ST_CONFIG, subject_symbol)
+
+            if strategy == 파라:
+                tmp_list = json.loads(config.get(subject_symbol, 매매불가수익량))
+                max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
+                cur_array.append(0)
+
+                tmp_list = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
+                for list in tmp_list:
+                    max_array.append(calc_divide_count(list[0], list[1], list[2]))
+                    cur_array.append(0)
+
+            ## subject_symbol의 config 불러옴
+            chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+
+            for chart_type in chart_types:
+                type = chart_type.split('_')[0]
+                time_unit = chart_type.split('_')[1]
+
+                section_str = subject_symbol + '_' + chart_type
+                if strategy == 파라:
+                    tmp_list = json.loads(config.get(section_str, 이동평균선))
+                    for list in tmp_list:
+                        max_array.append(calc_divide_count(list[0], list[1], list[2]))
+                        cur_array.append(0)
+                    tmp_list = json.loads(config.get(section_str, INIT_AF))
+                    max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
+                    cur_array.append(0)
+                    tmp_list = json.loads(config.get(section_str, MAX_AF))
+                    max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
+                    cur_array.append(0)
+                    tmp_list = json.loads(config.get(section_str, 초기캔들수))
+                    max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
+                    cur_array.append(0)
+
+        return max_array, cur_array
+    except Exception as err:
+        err_log.error(log_manager.get_error_msg(err))
+        return None, None
+
+def set_simulate_config(subject_code):
+
+    try:
+        # 전략 변수 Config 불러오기
+        config = configparser.RawConfigParser()
+        config.read(CONFIG_PATH + '/tester_var.cfg')
+
+        stv = Strategy_Var()
+        for subject_code in subject.info.keys():
+            subject_symbol = subject_code[:2]
+
+            if subject_symbol not in stv.info:
+                stv.info[subject_symbol] = {}
+
+            strategy = config.get(ST_CONFIG, subject_symbol)
+            stv.info[subject_symbol][strategy] = {}
+
+            stv.info[subject_symbol][strategy][차트] = []
+            stv.info[subject_symbol][strategy][차트변수] = {}
+            stv.info[subject_symbol][strategy][차트변수][틱차트] = {}
+            stv.info[subject_symbol][strategy][차트변수][분차트] = {}
+
+            if strategy == 파라:
+                stv.info[subject_symbol][strategy][차트변수][매매불가수익량] = config.get(subject_symbol, 매매불가수익량)
+                stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱] = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
+
+            ## subject_symbol의 config 불러옴
+            chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+
+            for chart_type in chart_types:
+                type = chart_type.split('_')[0]
+                time_unit = chart_type.split('_')[1]
+
+                section_str = subject_symbol + '_' + chart_type
+                stv.info[subject_symbol][strategy][차트변수][type][time_unit] = {}
+                stv.info[subject_symbol][strategy][차트].append( [ str(type), str(time_unit) ] )
+                if strategy == 파라:
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선] = json.loads(config.get(section_str, 이동평균선))
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][INIT_AF] = config.getfloat(section_str, INIT_AF)
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][MAX_AF] = config.getfloat(section_str, MAX_AF)
+                    stv.info[subject_symbol][strategy][차트변수][type][time_unit][초기캔들수] = config.getint(section_str, 초기캔들수)
+
+
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))

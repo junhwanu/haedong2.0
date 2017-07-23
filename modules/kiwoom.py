@@ -34,7 +34,7 @@ class Api():
     stv = None
     누적수익 = 0
 
-    def __init__(self):
+    def __init__(self, _stv = None):
         super(Api, self).__init__()
         global log, res, err_log
         log, res, err_log = log_manager.Log().get_logger()
@@ -56,6 +56,8 @@ class Api():
 
 
         elif const.MODE is const.TEST:
+            self.stv = _stv
+            self.chart = ctm.Chart_Manger(self.stv)
             pass
 
         else:
@@ -721,4 +723,17 @@ class Api():
         }
         return ht[err_code] + " (%s)" % err_code if err_code in ht else err_code
 
-    
+
+
+    ####################################################
+    # Test Function
+    ####################################################
+
+    def receiveTestData(self, candle):
+
+        # chart_manager 계산
+
+        # 매매
+
+
+        pass

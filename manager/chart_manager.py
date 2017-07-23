@@ -43,15 +43,10 @@ class Chart_Manger():
                             self.data[subject_code][chart_type][time_unit]['체결시간'] = []
                             self.data[subject_code][chart_type][time_unit]['영업일자'] = []
                             self.data[subject_code][chart_type][time_unit]['거래량'] = []
+                            self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
                         elif const.MODE == const.TEST:
-                            self.data[subject_code][chart_type][time_unit]['현재가'] = common_data[subject_code][chart_type][time_unit]['현재가']
-                            self.data[subject_code][chart_type][time_unit]['시가'] = common_data[subject_code][chart_type][time_unit]['시가']
-                            self.data[subject_code][chart_type][time_unit]['고가'] = common_data[subject_code][chart_type][time_unit]['고가']
-                            self.data[subject_code][chart_type][time_unit]['저가'] = common_data[subject_code][chart_type][time_unit]['저가']
-                            self.data[subject_code][chart_type][time_unit]['체결시간'] = common_data[subject_code][chart_type][time_unit]['체결시간']
-                            self.data[subject_code][chart_type][time_unit]['영업일자'] = common_data[subject_code][chart_type][time_unit]['영업일자']
-                            self.data[subject_code][chart_type][time_unit]['거래량'] = common_data[subject_code][chart_type][time_unit]['거래량']
-                            self.calc_common_data(subject_code, chart_type, time_unit)
+                            self.data[subject_code][chart_type][time_unit] = common_data[subject_code][chart_type][time_unit]
+                            self.data[subject_code][chart_type][time_unit]['인덱스'] = 0
 
                         self.data[subject_code][chart_type][time_unit]['현재가변동횟수'] = 0
                         self.data[subject_code][chart_type][time_unit]['현재캔들'] = {}
@@ -61,7 +56,6 @@ class Chart_Manger():
                         self.data[subject_code][chart_type][time_unit]['차트타입'] = chart_type
                         self.data[subject_code][chart_type][time_unit]['시간단위'] = time_unit
 
-                        self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
                         self.data[subject_code][chart_type][time_unit][const.이동평균선] = {}
                         self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수'] = self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.이동평균선]
                         self.data[subject_code][chart_type][time_unit]['지수이동평균선'] = {}
