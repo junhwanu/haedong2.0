@@ -67,7 +67,7 @@ class Api():
         :param sRealType: 리얼타입
         :param sRealData: 실시간 데이터전문
         """
-
+        print("test")
         try:
             if subject_code not in subject.info:
                 #log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
