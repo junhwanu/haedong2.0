@@ -5,7 +5,7 @@ import socketserver
 import threading
 import time
 import sys
-
+from __module import ModuleClass
 
 HEALTH_PORT = 56789
 BUFF_SIZE = 1024
@@ -25,9 +25,10 @@ class ClientHandler(socketserver.BaseRequestHandler):
         sock.close()
 
 
-class HealthConnectManager(threading.Thread):
+class HealthConnectManager(ModuleClass, threading.Thread):
 
     def __init__(self):
+        super(HealthConnectManager, self).__init__()
         threading.Thread.__init__(self)
         self.bind_ip = ''
         self.bind_port = HEALTH_PORT
@@ -43,6 +44,12 @@ class HealthConnectManager(threading.Thread):
         except Exception as err:
             print("Exception ({0})".format(err))
             sys.exit(-1)
+
+    def get_name(self):
+        return str(self.__class__.__name__)
+
+    def print_status(self):
+        print(self.__getattribute__())
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ import datetime
 import sys
 
 
+# Headong과 독립적인 Module
 # 호스트, 포트와 버퍼 사이즈를 지정
 TARGET_HOST = 'localhost'
 HEALTH_PORT = 56789

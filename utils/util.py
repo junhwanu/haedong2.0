@@ -4,6 +4,8 @@ import constant as const
 import chart_manager as chart
 import strategy_var as st
 import subject
+import sys
+import os
 
 def get_today_date():
     today = datetime.date.today()
@@ -66,3 +68,35 @@ def is_sorted(subject_code, chart_type, time_unit):
         return '상승세'
 
     return '모름'
+
+def get_error_msg(err):
+    exc_type, exc_obj, exc_tb = sys.exc_info()
+    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+    return "%s %s %s %s" % (err, exc_type, fname, exc_tb.tb_lineno)
+
+def parse_error_code(err_code):
+    """
+    Return the message of error codes
+
+    :param err_code: Error Code
+    :type err_code: str
+    :return: Error Message
+    """
+    err_code = str(err_code)
+    ht = {
+        "0": "정상처리",
+        "-100": "사용자정보교환에 실패하였습니다. 잠시후 다시 시작하여 주십시오.",
+        "-101": "서버 접속 실패",
+        "-102": "버전처리가 실패하였습니다.",
+        "-200": "시세조회 과부하",
+        "-201": "REQUEST_INPUT_st Failed",
+        "-202": "요청 전문 작성 실패",
+        "-300": "주문 입력값 오류",
+        "-301": "계좌비밀번호를 입력하십시오.",
+        "-302": "타인계좌는 사용할 수 없습니다.",
+        "-303": "주문가격이 20억원을 초과합니다.",
+        "-304": "주문가격은 50억원을 초과할 수 없습니다.",
+        "-305": "주문수량이 총발행주수의 1%를 초과합니다.",
+        "-306": "주문수량은 총발행주수의 3%를 초과할 수 없습니다."
+    }
+    return ht[err_code] + " (%s)" % err_code if err_code in ht else err_code

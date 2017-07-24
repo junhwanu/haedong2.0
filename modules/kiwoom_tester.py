@@ -1,18 +1,8 @@
 # -*- coding: utf-8 -*-
-import sys
-import time
 
 import chart_manager as ctm
-from constant import *
-import contract_manager as cm
 import log_manager
-import screen
 import strategy_manager as stm
-import strategy_var as st
-import subject
-import telepot_manager as tm
-import util
-from log_manager import get_error_msg
 
 log = None
 res = None

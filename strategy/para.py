@@ -1,13 +1,9 @@
 # -*- coding: utf-8 -*-
-import time
 import contract_manager as cm
-import subject
-import chart_manager as chart
-from constant import *
-import strategy_var as st
-from util import *
 import log_manager
-from base_strategy import BaseStrategy
+from __base_strategy import BaseStrategy
+from constant import *
+from utils.util import *
 
 
 class Para(BaseStrategy):

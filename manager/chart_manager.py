@@ -2,19 +2,24 @@
 import time
 import subject
 import strategy_var as st
-import log_manager
 import constant as const
-from log_manager import get_error_msg
+from utils.util import *
+from __manager import ManagerClass
 
 common_data = {}
 
-class Chart_Manger():
+
+class ChartManger(ManagerClass):
     data = {}
     stv = None
-    log, res, err_log = log_manager.Log().get_logger()
+
     running_time = 0
 
+    def __init__(self):
+        super(ChartManger, self).__init__()
+
     def __init__(self, stv):
+        super(ChartManger, self).__init__()
         self.stv = stv
 
     def init_data(self, subject_code):
@@ -208,11 +213,11 @@ class Chart_Manger():
         else:
             self.data[subject_code][chart_type][time_unit]['일목균형표']['전환선'].append((max(
                 self.data[subject_code][chart_type][time_unit]['현재가'][
-                self.data[subject_code][chart_type][time_unit]['인덱스'] - 9: self.data[subject_code][chart_type][time_unit][
-                    '인덱스']]) + min(
-                self.data[subject_code][chart_type][time_unit]['현재가'][
-                self.data[subject_code][chart_type][time_unit]['인덱스'] - 9: self.data[subject_code][chart_type][time_unit][
-                    '인덱스']])) / 2)
+                    self.data[subject_code][chart_type][time_unit]['인덱스'] - 9: self.data[subject_code][chart_type][time_unit][
+                        '인덱스']]) + min(
+                            self.data[subject_code][chart_type][time_unit]['현재가'][
+                                self.data[subject_code][chart_type][time_unit]['인덱스'] - 9: self.data[subject_code][chart_type][time_unit][
+                                    '인덱스']])) / 2)
 
         if self.data[subject_code][chart_type][time_unit]['인덱스'] < 26:
             self.data[subject_code][chart_type][time_unit]['일목균형표']['기준선'].append(None)
@@ -382,3 +387,12 @@ class Chart_Manger():
         self.data[subject_code][chart_type][time_unit]['AF'] = af
         self.data[subject_code][chart_type][time_unit]['현재플로우'] = temp_flow
         self.data[subject_code][chart_type][time_unit]['플로우'].append(temp_flow)
+
+    def set_stv(self, stv_):
+        self.stv = stv_
+
+    def get_name(self):
+        return str(self.__class__.__name__)
+
+    def print_status(self):
+        print(self.__getattribute__())

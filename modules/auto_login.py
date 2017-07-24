@@ -9,9 +9,10 @@ import os
 import pyautogui
 import cv2
 from PIL import Image
+from __module import ModuleClass
 
 
-class Login(threading.Thread):
+class Login(ModuleClass, threading.Thread):
     LOGIN_PNAME = ["kfstarter.exe", "KFStarter.exe"]
     PYTHON_PNAME = "python.exe"
 
@@ -96,7 +97,7 @@ class Login(threading.Thread):
             dlg.Edit1.SetFocus()
         except pywinauto.findwindows.ElementNotFoundError as err:
             time.sleep(3)
-            print("로그인 윈도우를 찾지 못했습니다. 5초후 재시도")
+            print("로그인 윈도우를 찾지 못했습니다(%s). 5초후 재시도")
 
         계정입력 = dlg.Edit1
         계정입력.SetFocus()
@@ -201,6 +202,11 @@ class Login(threading.Thread):
         print("Auto Login Thread 종료")
         # self.account_password_setup()
 
+    def get_name(self):
+        return str(self.__class__.__name__)
+
+    def print_status(self):
+        print(self.__getattribute__())
 
 if __name__ == '__main__':
     login = Login()
