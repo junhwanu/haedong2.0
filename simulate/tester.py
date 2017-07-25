@@ -11,6 +11,7 @@ import configparser
 import json
 from strategy_var import Strategy_Var
 from multiprocessing import Process, Queue
+from kiwoom_tester import *
 import subprocess
 
 log, res, err_log = log_manager.Log().get_logger()
@@ -19,6 +20,7 @@ result = []
 
 
 def simulate(kw, result):
+    record = {}
     chart_data = kw.chart.data
     stv_info = kw.stv.info
     subject_list = stv_info.keys()
@@ -37,6 +39,7 @@ def simulate(kw, result):
 
 def proc():
     global running_time
+    dbm = DBManager()
     subject_symbol = ''
     start_date = ''
     end_date = ''
@@ -64,7 +67,7 @@ def proc():
 
     try:
         ''' 해당 종목 테이블 가져옴 '''
-        tables = get_table_list(subject_symbol, start_date, end_date)
+        tables = dbm.get_table_list(subject_symbol, start_date, end_date)
         table_list = {}
         subject_codes = []
         for table in tables:
@@ -84,52 +87,64 @@ def proc():
             data[subject_code] = []
             log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
             for table_name in table_list[subject_code]:
-                data[subject_code].append(get_table(table_name))
+                data[subject_code].append(dbm.get_table(table_name))
 
-        stv_table, cur_table = create_simulater_var_table()  # 총 테스트 횟수 계산
-
-        label = subprocess.check_output(["git", "describe", "--always"]) # current git hash
-        procs = []
         while True:
-            stv = calc_strategy_var(cur_table)
-            print(stv.info)
-            kw = kiwoom.Api(stv)
-            '''
-            process = Process(target=simulate(), args=(kw,))
-            procs.append(process)
-            process.start()
-            '''
-            if increase_the_number_of_digits(stv_table, cur_table) == False: break
+            log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
+            # data[subject_code] -> ctm.common_data에 setting
+            # tester_var.cfg에서 subject_symbol에 맞는 chart_type, time_unit을 가져와서 계산한다.
 
-        #for process in procs:
-        #    process.join()
+            result['시작일'] = start_date
+            result['종료일'] = end_date
+            result['종목코드'] = subject_symbol
 
-        '''
-        s_time = time.time()
-        for idx in range(0):
-            for subject_code in subject_codes:
-                set_simulate_config(subject_code)
+            log.info("총 테스트 횟수를 계산합니다.")
+            total_count = 1
+            stv_table, cur_table = create_simulater_var_table()  # 총 테스트 횟수 계산
+            for cnt in stv_table:
+                total_count * (cnt+1)
 
-                kw = kiwoom.Api()
+            log.info("총 %s번의 테스트." % total_count)
 
-                log.info('%s 월물 테스트 시작.' % subject_code)
-                log.info('기간 : %s ~ %s' % (table_list[subject_code][0], table_list[subject_code][-1]))
+            label = subprocess.check_output(["git", "describe", "--always"]) # current git hash
+            procs = []
+            while True:
+                stv = calc_strategy_var(cur_table)
+                print(stv.info)
+                kw_tester = KiwoomTester(stv)
 
-                chart.init_data(subject_code)
-                for chart_config in st.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
-                    chart_type = chart_config[0]
-                    time_unit = chart_config[1]
-                    chart.init_current_candle(subject_code, chart_type, time_unit)  # kiwoom.onReceiveRealData에서 len('현재캔들') == 0이면 캔들을 생성 안하므로 하나 추가
+                ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
+                '''
+                process = Process(target=simulate(), args=(kw,))
+                procs.append(process)
+                process.start()
+                '''
+                if increase_the_number_of_digits(stv_table, cur_table) == False: break
 
-                for day_data in data[subject_code]:
-                    for tick in day_data:
-                        체결시간, 현재가, 영업일자 = parse_tick(tick)
-                        kw.OnReceiveRealData(subject_code, 현재가, 체결시간)
+            # for process in procs:
+            #    process.join()
 
-                chart.clear_data(subject_code)
+            log.info("[테스트 결과]")
 
-        running_time = running_time + (time.time() - s_time)
-        '''
+            ''' 이 부분에 result를 수익별로 sorting '''
+
+            ''' 상위 N개의 결과 보여 줌 '''
+            for i in range(0, 10):
+                log.info(result[i]) # 더 디테일하게 변경
+
+            log.info("해당 코드의 Git Hash : %s" % label)
+            while True:
+                log.info("Database에 넣을 결과 Index를 입력해주세요.(종료 : -1)")
+                idx = input()
+                if idx == -1: break
+                log.info("저장하신 결과에 대한 코드를 나중에 확인하시기 위해선, 코드를 변경하시기 전에 Commit을 해야 합니다.")
+
+                ''' 해당 index의 결과를 stv를 정렬해서, 결과 DB에 저장. '''
+
+            log.info("Config를 변경하여 계속 테스트 하시려면 아무키나 눌러주세요.(종료 : exit)")
+            cmd = input()
+            if cmd == 'exit': break
+
         log.info('테스트 종료.')
     except Exception as err:
         err_log.error(log_manager.get_error_msg(err))
