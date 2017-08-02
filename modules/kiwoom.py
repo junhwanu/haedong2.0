@@ -433,8 +433,10 @@ class Api(ModuleClass):
                                     chart_data['현재캔들']['시가'] = tick[0]
 
                                 chart_data['현재가변동횟수'] += 1
-                                if tick[0] < chart_data['현재캔들']['저가']: chart_data['현재캔들']['저가'] = tick[0]
-                                if tick[0] > chart_data['현재캔들']['고가']: chart_data['현재캔들']['고가'] = tick[0]
+                                if tick[0] < chart_data['현재캔들']['저가']:
+                                    chart_data['현재캔들']['저가'] = tick[0]
+                                if tick[0] > chart_data['현재캔들']['고가']:
+                                    chart_data['현재캔들']['고가'] = tick[0]
 
                                 if chart_data['현재가변동횟수'] == time_unit:
                                     chart_data['현재캔들']['체결시간'] = tick[1]
@@ -450,7 +452,6 @@ class Api(ModuleClass):
                             chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
 
                         if len(chart_data['임시데이터']) / 7 > self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
-                        #if True:
                             ''' 데이터 수신 완료 '''
 
                             self.log.info("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))

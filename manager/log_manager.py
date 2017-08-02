@@ -1,20 +1,23 @@
 # -*- coding: utf-8 -*-
 import shutil, time, sys, os
+import constant as const
 import logging
-from singleton import SingletonInstane
-from __manager import ManagerClass
+import singleton
 
 # Singleton class --> there is only one log manager
 
 
-class LogManager(ManagerClass, SingletonInstane):
+class LogManager():
+    __metaclass__ = singleton.SingletonInstane
+
     res_logger = None
     info_logger = None
     err_logger = None
 
-    def __init__(self, path):
+    def __init__(self):
         super(LogManager, self).__init__()
 
+        path = const.MAIN_DIR
         path = path + '/logs/'
         now = time.localtime()
         today = "%04d%02d%02d" % (now.tm_year, now.tm_mon, now.tm_mday)
@@ -50,6 +53,8 @@ class LogManager(ManagerClass, SingletonInstane):
         self.info_logger.setLevel(logging.DEBUG)
         self.res_logger.setLevel(logging.INFO)
         self.err_logger.setLevel(logging.ERROR)
+
+        print("init singleton class")
 
     def get_logger(self):
         return self.info_logger, self.res_logger, self.err_logger

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 import contract_manager as cm
-import log_manager
 from __base_strategy import BaseStrategy
 from constant import *
 from utils.util import *
 
 
 class Para(BaseStrategy):
-    log, res, err_log = log_manager.Log().get_logger()
     running_time = 0
     
     def __init__(self, chart, stv):
@@ -57,7 +55,7 @@ class Para(BaseStrategy):
             running_time = running_time + (time.time() - s_time)
             return order_contents
         except Exception as err:
-            self.err_log.error(log_manager.get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
     
             running_time = running_time + (time.time() - s_time)
             return false
@@ -152,7 +150,7 @@ class Para(BaseStrategy):
             running_time = running_time + (time.time() - s_time)
             return order_info
         except Exception as err:
-            self.err_log.error(log_manager.get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
     
             running_time = running_time + (time.time() - s_time)
             return false
@@ -233,7 +231,7 @@ class Para(BaseStrategy):
             return 매도수구분
     
         except Exception as err:
-            self.err_log.error(log_manager.get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
             return 매매없음
 
     def get_buy_count(self, subject_code, current_price):

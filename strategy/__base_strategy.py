@@ -1,12 +1,19 @@
 import abc
 import inspect
+from log_manager import LogManager
 
 
 class BaseStrategy():
     __metaclass__ = abc.ABCMeta
 
+    log, res, err_log = None, None, None
+
     stv = None
     chart = None
+
+    def __init__(self):
+        super(BaseStrategy, self).__init__()
+        self.init_logger()
 
     @abc.abstractmethod
     def is_it_ok(self, current_price):
@@ -108,3 +115,6 @@ class BaseStrategy():
         #
         # def check_contract_in_tick(subject_code, current_price):
         #     pass
+
+    def init_logger(self):
+        self.log, self.res, self.err_log = LogManager.__call__().get_logger()

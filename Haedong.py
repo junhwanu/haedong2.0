@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/viewer');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/config');
 
-import log_manager
+from log_manager import LogManager
 import constant as const
 import tester
 import kiwoom
@@ -24,9 +24,7 @@ running_time = 0
 if __name__ == "__main__":
     s_time = time.time()
 
-    logger = log_manager.Log()
-    logger.init(const.MAIN_DIR)
-    log, res, err_log = logger.get_logger()
+    log, res, err_log = LogManager.__call__().get_logger()
 
     input()
     while(True):
