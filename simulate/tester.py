@@ -11,6 +11,7 @@ import configparser
 import json
 from strategy_var import Strategy_Var
 from multiprocessing import Process, Queue
+from kiwoom_tester import *
 from util import *
 import subprocess
 
@@ -24,15 +25,16 @@ class Tester:
     def __init__(self):
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
 
-    def simulate(kw, result):
-        chart_data = kw.chart.data
-        stv_info = kw.stv.info
-        subject_list = stv_info.keys()
-        chart_type = {}
-        time_unit = {}
-        for subject_code in subject_list:
-            chart_type[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][0]
-            time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
+def simulate(kw, result):
+    record = {}
+    chart_data = kw.chart.data
+    stv_info = kw.stv.info
+    subject_list = stv_info.keys()
+    chart_type = {}
+    time_unit = {}
+    for subject_code in subject_list:
+        chart_type[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][0]
+        time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
 
         for idx in range(0, chart_data):
             '''
@@ -41,65 +43,83 @@ class Tester:
             pass
 
 
-    def proc():
-        global running_time
-        subject_symbol = ''
-        start_date = ''
-        end_date = ''
-        log.info('종목코드를 입력하세요. [ ex) GC ]')
-        subject_symbol = input()
+def proc():
+    global running_time
+    dbm = DBManager()
+    subject_symbol = ''
+    start_date = ''
+    end_date = ''
+    log.info('종목코드를 입력하세요. [ ex) GC ]')
+    subject_symbol = input()
 
-        if subject_symbol not in subject.info:
-            log.info('잘못된 종목코드입니다.')
-            proc()
-            return
+    if subject_symbol not in subject.info:
+        log.info('잘못된 종목코드입니다.')
+        proc()
+        return
 
-        log.info('시작일을 입력하세요.')
-        start_date = input()
-        if len(start_date) != 8:
-            log.info('잘못된 시작일입니다.')
-            proc()
-            return
+    log.info('시작일을 입력하세요.')
+    start_date = input()
+    if len(start_date) != 8:
+        log.info('잘못된 시작일입니다.')
+        proc()
+        return
 
-        log.info('종료일을 입력하세요.')
-        end_date = input()
-        if len(end_date) != 8:
-            log.info('잘못된 종료일입니다.')
-            proc()
-            return
+    log.info('종료일을 입력하세요.')
+    end_date = input()
+    if len(end_date) != 8:
+        log.info('잘못된 종료일입니다.')
+        proc()
+        return
 
-        try:
-            ''' 해당 종목 테이블 가져옴 '''
-            tables = get_table_list(subject_symbol, start_date, end_date)
-            table_list = {}
-            subject_codes = []
-            for table in tables:
-                table_name = table[0]
-                subject_code = table_name[: len(subject_symbol) + 3]
-                if subject_code not in table_list:
-                    table_list[subject_code] = []
-                    subject_codes.append(subject_code)
-                    subject.info[subject_code] = subject.info[subject_symbol]   # 종목정보 복사
-                    st.info[subject_code] = st.info[subject_symbol] # 전략변수 복사
+    try:
+        ''' 해당 종목 테이블 가져옴 '''
+        tables = dbm.get_table_list(subject_symbol, start_date, end_date)
+        table_list = {}
+        subject_codes = []
+        for table in tables:
+            table_name = table[0]
+            subject_code = table_name[: len(subject_symbol) + 3]
+            if subject_code not in table_list:
+                table_list[subject_code] = []
+                subject_codes.append(subject_code)
+                subject.info[subject_code] = subject.info[subject_symbol]   # 종목정보 복사
+                st.info[subject_code] = st.info[subject_symbol] # 전략변수 복사
 
-                table_list[subject_code].append(table_name)
+            table_list[subject_code].append(table_name)
 
-            ''' 월물별 테이블에서 데이터 가져옴 '''
-            data = {}
-            for subject_code in subject_codes:
-                data[subject_code] = []
-                log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
-                for table_name in table_list[subject_code]:
-                    data[subject_code].append(get_table(table_name))
+        ''' 월물별 테이블에서 데이터 가져옴 '''
+        data = {}
+        for subject_code in subject_codes:
+            data[subject_code] = []
+            log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
+            for table_name in table_list[subject_code]:
+                data[subject_code].append(dbm.get_table(table_name))
 
+        while True:
+            log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
+            # data[subject_code] -> ctm.common_data에 setting
+            # tester_var.cfg에서 subject_symbol에 맞는 chart_type, time_unit을 가져와서 계산한다.
+
+            result['시작일'] = start_date
+            result['종료일'] = end_date
+            result['종목코드'] = subject_symbol
+
+            log.info("총 테스트 횟수를 계산합니다.")
+            total_count = 1
             stv_table, cur_table = create_simulater_var_table()  # 총 테스트 횟수 계산
+            for cnt in stv_table:
+                total_count * (cnt+1)
+
+            log.info("총 %s번의 테스트." % total_count)
 
             label = subprocess.check_output(["git", "describe", "--always"]) # current git hash
             procs = []
             while True:
                 stv = calc_strategy_var(cur_table)
                 print(stv.info)
-                kw = kiwoom.Api(stv)
+                kw_tester = KiwoomTester(stv)
+
+                ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
                 '''
                 process = Process(target=simulate(), args=(kw,))
                 procs.append(process)
@@ -107,53 +127,48 @@ class Tester:
                 '''
                 if increase_the_number_of_digits(stv_table, cur_table) == False: break
 
-            #for process in procs:
+            # for process in procs:
             #    process.join()
 
-            '''
-            s_time = time.time()
-            for idx in range(0):
-                for subject_code in subject_codes:
-                    set_simulate_config(subject_code)
-    
-                    kw = kiwoom.Api()
-    
-                    log.info('%s 월물 테스트 시작.' % subject_code)
-                    log.info('기간 : %s ~ %s' % (table_list[subject_code][0], table_list[subject_code][-1]))
-    
-                    chart.init_data(subject_code)
-                    for chart_config in st.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
-                        chart_type = chart_config[0]
-                        time_unit = chart_config[1]
-                        chart.init_current_candle(subject_code, chart_type, time_unit)  # kiwoom.onReceiveRealData에서 len('현재캔들') == 0이면 캔들을 생성 안하므로 하나 추가
-    
-                    for day_data in data[subject_code]:
-                        for tick in day_data:
-                            체결시간, 현재가, 영업일자 = parse_tick(tick)
-                            kw.OnReceiveRealData(subject_code, 현재가, 체결시간)
-    
-                    chart.clear_data(subject_code)
-    
-            running_time = running_time + (time.time() - s_time)
-            '''
-            log.info('테스트 종료.')
-        except Exception as err:
-            err_log.error(get_error_msg(err))
+            log.info("[테스트 결과]")
+
+            ''' 이 부분에 result를 수익별로 sorting '''
+
+            ''' 상위 N개의 결과 보여 줌 '''
+            for i in range(0, 10):
+                log.info(result[i]) # 더 디테일하게 변경
+
+            log.info("해당 코드의 Git Hash : %s" % label)
+            while True:
+                log.info("Database에 넣을 결과 Index를 입력해주세요.(종료 : -1)")
+                idx = input()
+                if idx == -1: break
+                log.info("저장하신 결과에 대한 코드를 나중에 확인하시기 위해선, 코드를 변경하시기 전에 Commit을 해야 합니다.")
+
+                ''' 해당 index의 결과를 stv를 정렬해서, 결과 DB에 저장. '''
+
+            log.info("Config를 변경하여 계속 테스트 하시려면 아무키나 눌러주세요.(종료 : exit)")
+            cmd = input()
+            if cmd == 'exit': break
+
+        log.info('테스트 종료.')
+    except Exception as err:
+        err_log.error(log_manager.get_error_msg(err))
 
 
-    def parse_tick(tick):
-        return tick[0], tick[1], tick[2]
+def parse_tick(tick):
+    return tick[0], tick[1], tick[2]
 
-    def increase_the_number_of_digits(max_array, cur_array):
-        cur_array[-1] += 1
-        for i in range(len(cur_array)-1 , -1, -1):
-            if cur_array[i] > max_array[i]:
-                if i == 0:
-                    return False
-                cur_array[i] = 0
-                cur_array[i-1] += 1
-            else: break
-        return True
+def increase_the_number_of_digits(max_array, cur_array):
+    cur_array[-1] += 1
+    for i in range(len(cur_array)-1 , -1, -1):
+        if cur_array[i] > max_array[i]:
+            if i == 0:
+                return False
+            cur_array[i] = 0
+            cur_array[i-1] += 1
+        else: break
+    return True
 
     def calc_divide_count(start, end, interval):
         ''' [10, 40, 5] 일 경우 6을 return 해주는 코드, [0, 0, 0]이면 1이아니라 0을 리턴한다.
@@ -239,10 +254,10 @@ class Tester:
 
                 strategy = config.get(ST_CONFIG, subject_symbol)
 
-                if strategy == 파라:
-                    tmp_list = json.loads(config.get(subject_symbol, 매매불가수익량))
-                    max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
-                    cur_array.append(0)
+            if strategy == 파라:
+                tmp_list = json.loads(config.get(subject_symbol, 매매불가수익량))
+                max_array.append(calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
+                cur_array.append(0)
 
                     tmp_list = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
                     for list in tmp_list:
