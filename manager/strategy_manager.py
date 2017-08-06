@@ -10,9 +10,9 @@ from __manager import ManagerClass
 
 class StrategyManager(ManagerClass):
 
-    def __init__(self):
+    def __init__(self, sbv):
         super(StrategyManager, self).__init__()
-        self.sbv = subject.Subject()
+        self.sbv = sbv
 
     def get_strategy_var_from_config(self):
         stv = None

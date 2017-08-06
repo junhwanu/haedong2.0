@@ -38,6 +38,7 @@ class Tester:
             chart_type[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
             time_unit[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
 
+            print(stv_info)
             for idx in range(0, chart_data[subject_code][chart_type][time_unit]):
                 candle = {
                     현재가 :   chart_data[subject_code][chart_type][time_unit][현재가][idx],
@@ -48,11 +49,13 @@ class Tester:
 
                 order_info = kw.check_contract_in_candle(subject_code, candle, idx)
 
-                if order_info[신규매매] is True:
-                    kw.send_order[order_info]
+                #if order_info[신규매매] is True:
+                #    kw.send_order[order_info]
 
         record['전략변수'] = kw.stv
         record['누적수익'] = kw.누적수익
+
+        result.append(record)
 
     def proc(self):
         global running_time
@@ -131,15 +134,14 @@ class Tester:
                     kw_tester = KiwoomTester(stv)
 
                     ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
-                    '''
-                    process = Process(target=simulate(), args=(kw,))
+                    process = Process(target=self.simulate(), args=(kw_tester, self.result))
                     procs.append(process)
                     process.start()
-                    '''
+
                     if self.increase_the_number_of_digits(stv_table, cur_table) == False: break
 
-                # for process in procs:
-                #    process.join()
+                for process in procs:
+                    process.join()
 
                 log.info("[테스트 결과]")
 
