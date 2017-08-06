@@ -33,7 +33,7 @@ class Tester:
         chart_type = {}
         time_unit = {}
         for subject_code in subject_list:
-            chart_type[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][0]
+            chart_type[subject_code] = stv_info[subject_code][subject.info[subject_code]][차트][0][0]
             time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
 
             for idx in range(0, chart_data):

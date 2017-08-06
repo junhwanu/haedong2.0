@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/viewer');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/config');
 
-from log_manager import LogManager
+import log_manager as Log
 import constant as const
 import tester
 import kiwoom
@@ -26,7 +26,7 @@ class Haedong():
 
     def __init__(self):
         super(Haedong, self).__init__()
-        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = Log.LogManager.__call__().get_logger()
 
     def run(self):
         s_time = time.time()
