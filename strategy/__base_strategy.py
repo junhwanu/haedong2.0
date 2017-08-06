@@ -3,9 +3,7 @@ import inspect
 import log_manager as Log
 
 
-class BaseStrategy():
-    __metaclass__ = abc.ABCMeta
-
+class BaseStrategy(metaclass=abc.ABCMeta):
     log, res, err_log = None, None, None
 
     stv = None

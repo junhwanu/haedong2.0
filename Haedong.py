@@ -30,9 +30,8 @@ class Haedong():
 
     def run(self):
         s_time = time.time()
-        #input()
-        while (True):
 
+        while (True):
             if len(sys.argv) == 1:
                 self.log.info("실제투자(1), 테스트(2)")
                 const.MODE = int(input())
@@ -43,8 +42,6 @@ class Haedong():
                 # health server run
                 health_server_thread = health_server.HealthConnectManager()
                 health_server_thread.start()
-
-                print(const.MODE)
                 kw_api = kiwoom.Api()
 
                 health_server_thread.close()

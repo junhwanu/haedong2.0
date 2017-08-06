@@ -2,9 +2,8 @@ import abc
 import inspect
 import log_manager as Log
 
-class ModuleClass:
-    __metaclass__ = abc.ABCMeta
 
+class ModuleClass(metaclass=abc.ABCMeta):
     log, res, err_log = None, None, None
 
     def __init__(self):

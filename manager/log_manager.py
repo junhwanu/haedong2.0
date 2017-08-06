@@ -7,8 +7,7 @@ import singleton
 # Singleton class --> there is only one log manager
 
 
-class LogManager():
-    __metaclass__ = singleton.SingletonInstane
+class LogManager(metaclass=singleton.SingletonInstane):
     res_logger, info_logger, err_logger = None, None, None
 
     def __init__(self):
