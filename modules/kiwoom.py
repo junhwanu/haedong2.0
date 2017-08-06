@@ -606,7 +606,6 @@ class Api(ModuleClass):
                     msg = '신규주문 체결 [%s]' % order_info
                     self.res.info('신규주문 체결 [%s]' % order_info)
                     self.contract_manager.add_contract(order_info)
-
                     self.telepot.send_message(msg)
 
         except Exception as err:

@@ -5,6 +5,7 @@ from constant import *
 import configparser
 import json
 from utils.util import *
+import strategy_var
 from __manager import ManagerClass
 
 
@@ -15,7 +16,7 @@ class StrategyManager(ManagerClass):
         self.sbv = sbv
 
     def get_strategy_var_from_config(self):
-        stv = None
+        stv = strategy_var.Strategy_Var()
 
         try:
             # 전략 변수 Config 불러오기

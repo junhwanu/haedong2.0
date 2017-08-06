@@ -10,7 +10,7 @@ class TelepotManager(metaclass=singleton.SingletonInstane):
     TOKEN = '339704326:AAEXoMPlPLsuA5uMqdCUF-Wq5QMyKqNsgYo'
     id_list = []
 
-    def __init__(self, account):
+    def __init__(self):
         super(TelepotManager, self).__init__()
 
     def set_account(self, account):
