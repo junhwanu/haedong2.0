@@ -2,7 +2,6 @@ import abc
 import inspect
 import log_manager as Log
 
-
 class ManagerClass(metaclass=abc.ABCMeta):
     log, res, err_log = None, None, None
 
