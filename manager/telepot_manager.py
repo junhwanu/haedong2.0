@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import telepot
-from singleton import SingletonInstane
 from __manager import ManagerClass
 
 # Singleton class --> there is only one log manager
@@ -8,7 +7,7 @@ from __manager import ManagerClass
 TOKEN = '339704326:AAEXoMPlPLsuA5uMqdCUF-Wq5QMyKqNsgYo'
 
 
-class TelepotManager(ManagerClass, SingletonInstane):
+class TelepotManager(ManagerClass):
     id_list = []
 
     def __init__(self):

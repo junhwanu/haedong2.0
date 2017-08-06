@@ -44,7 +44,7 @@ class Api(ModuleClass):
         # Headong Manager Set-up
         self.telepot_manager = tm.TelepotManager()
         self.contract_manager = cm.ContractManager()
-        self.chart_manager = ctm.ChartManger()
+        self.chart_manager = ctm.ChartManger(_stv)
         self.strategy_manager = stm.StrategyManager()
 
         if const.MODE is const.REAL:
@@ -53,10 +53,10 @@ class Api(ModuleClass):
             self.log.info("해동이2.0 실제투자 시작 합니다.")
             self.app = QApplication(sys.argv)
             self.ocx = QAxWidget("KFOPENAPI.KFOpenAPICtrl.1")
-            self.ocx.OnEventConnect[int].connect()
-            self.ocx.OnReceiveTrData[str, str, str, str, str].connect()
-            self.ocx.OnReceiveChejanData[str, int, str].connect()
-            self.ocx.OnReceiveRealData[str, str, str].connect()
+            self.ocx.OnEventConnect[int].connect(self.OnEventConnect)
+            self.ocx.OnReceiveTrData[str, str, str, str, str].connect(self.OnReceiveTrData)
+            self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
+            self.ocx.OnReceiveRealData[str, str, str].connect(self.OnReceiveRealData)
 
             # Overall Configuration Values
             self.strategy_var = self.strategy_manager.get_strategy_var_from_config()

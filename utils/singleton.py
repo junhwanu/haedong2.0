@@ -1,14 +1,10 @@
 
+class SingletonInstane(type):
 
-class SingletonInstane:
-  __instance = None
+    def __call__(cls, *args, **kwargs):
+        try:
+            return cls.__instance
 
-  @classmethod
-  def __getInstance(cls):
-    return cls.__instance
-
-  @classmethod
-  def instance(cls, *args, **kargs):
-    cls.__instance = cls(*args, **kargs)
-    cls.instance = cls.__getInstance
-    return cls.__instance
+        except AttributeError:
+            cls.__instance = super(SingletonInstane).__call__(*args, **kwargs)
+            return cls.__instance

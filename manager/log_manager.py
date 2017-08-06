@@ -9,10 +9,7 @@ import singleton
 
 class LogManager():
     __metaclass__ = singleton.SingletonInstane
-
-    res_logger = None
-    info_logger = None
-    err_logger = None
+    res_logger, info_logger, err_logger = None, None, None
 
     def __init__(self):
         super(LogManager, self).__init__()
@@ -38,23 +35,31 @@ class LogManager():
         log_format = "%(asctime)s [%(levelname)s] (%(filename)s:%(lineno)d) %(message)s"
         formatter = logging.Formatter(log_format, date_format)
 
-        self.res_logger.addHandler(logging.FileHandler(all_file, encoding='utf-8').setFormatter(formatter))
-        self.info_logger.addHandler(logging.FileHandler(all_file, encoding='utf-8').setFormatter(formatter))
-        self.err_logger.addHandler(logging.FileHandler(all_file, encoding='utf-8').setFormatter(formatter))
+        all_file_handler = logging.FileHandler(all_file, encoding='utf-8')
+        all_file_handler.setFormatter(formatter)
 
-        self.res_logger.addHandler(logging.FileHandler(res_file, encoding='utf-8').setFormatter(formatter))
-        self.info_logger.addHandler(logging.FileHandler(info_file, encoding='utf-8').setFormatter(formatter))
-        self.err_logger.addHandler(logging.FileHandler(err_file, encoding='utf-8').setFormatter(formatter))
+        res_file_handler = logging.FileHandler(res_file, encoding='utf-8')
+        res_file_handler.setFormatter(formatter)
+        res_stream_handler = logging.StreamHandler()
+        res_stream_handler.setFormatter(formatter)
 
-        self.res_logger.addHandler(logging.StreamHandler().setFormatter(formatter))
-        self.info_logger.addHandler(logging.StreamHandler().setFormatter(formatter))
-        self.err_logger.addHandler(logging.StreamHandler().setFormatter(formatter))
+        info_file_handler = logging.FileHandler(info_file, encoding='utf-8')
+        info_file_handler.setFormatter(formatter)
+        info_stream_handler = logging.StreamHandler()
+        info_stream_handler.setFormatter(formatter)
+
+        self.info_logger.addHandler(info_file_handler)
+        self.info_logger.addHandler(all_file_handler)
+        self.info_logger.addHandler(info_stream_handler)
+
+        self.res_logger.addHandler(res_file_handler)
+        self.res_logger.addHandler(all_file_handler)
+        self.res_logger.addHandler(res_stream_handler)
 
         self.info_logger.setLevel(logging.DEBUG)
         self.res_logger.setLevel(logging.INFO)
-        self.err_logger.setLevel(logging.ERROR)
 
-        print("init singleton class")
+        print("Initialize Log Manager")
 
     def get_logger(self):
         return self.info_logger, self.res_logger, self.err_logger
