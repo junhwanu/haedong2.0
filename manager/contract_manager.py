@@ -22,6 +22,7 @@ class ContractManager(ManagerClass):
 
     def __init__(self):
         super(ContractManager, self).__init__()
+        self.sbv = subject.Subject()
 
     def add_contract(self, order_info):
         try:
@@ -36,10 +37,10 @@ class ContractManager(ManagerClass):
                 # 정확한 체결가를 위해 체결가 다시 계산
                 c['체결가'] = ((c['체결가'] * c['보유수량']) + (order_info['체결표시가격']\
                     * int(order_info['신규수량']))) / (c['보유수량'] + int(order_info['신규수량']))
-                c['체결가'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
+                c['체결가'] = round(float(order_info['체결표시가격']), self.sbv.info[order_info['종목코드']]['자릿수'])
 
-                if subject.info[subject_code]['상태'] == '매매시도중' or subject.info[subject_code]['상태'] == '매수중' \
-                        or subject.info[subject_code]['상태'] == '매도중':
+                if self.sbv.info[subject_code]['상태'] == '매매시도중' or self.sbv.info[subject_code]['상태'] == '매수중' \
+                        or self.sbv.info[subject_code]['상태'] == '매도중':
 
                     if c['계약타입'][SAFE] > c['계약타입'][DRIBBLE]:
                         safe_num = int(int(order_info['신규수량']) / 2)
@@ -72,27 +73,27 @@ class ContractManager(ManagerClass):
                 c['계약타입'][DRIBBLE] = dribble_num
                 c['체결가'] = float(order_info['체결표시가격'])
                 c['매도수구분'] = order_info['매도수구분']
-                c['전략'] = subject.info[subject_code]['전략']
+                c['전략'] = self.sbv.info[subject_code]['전략']
 
-                if subject.info[subject_code]['전략'] == '파라':
+                if self.sbv.info[subject_code]['전략'] == '파라':
 
-                    order_info['익절틱'], order_info['손절틱'] = self.get_loss_cut(subject.info[subject_code]['전략'])
+                    order_info['익절틱'], order_info['손절틱'] = self.get_loss_cut(self.sbv.info[subject_code]['전략'])
                     c['익절가'] = []
                     c['손절가'] = []
 
                     if order_info['매도수구분'] == 매도:
                         for i in range(len(order_info['익절틱'])):
-                            c['익절가'].append(c['체결가'] - order_info['익절틱'][i] * subject.info[subject_code]['단위'])
+                            c['익절가'].append(c['체결가'] - order_info['익절틱'][i] * self.sbv.info[subject_code]['단위'])
                         for i in range(len(order_info['손절틱'])):
-                            c['손절가'].append(c['체결가'] + order_info['손절틱'][i] * subject.info[subject_code]['단위'])
+                            c['손절가'].append(c['체결가'] + order_info['손절틱'][i] * self.sbv.info[subject_code]['단위'])
 
                     elif order_info['매도수구분'] == 매수:
                         for i in range(len(order_info['익절틱'])):
                             c['익절가'] = c['체결가'] + order_info['익절틱'][i] * \
-                                                  subject.info[subject_code]['단위']
+                                                  self.sbv.info[subject_code]['단위']
                         for i in range(len(order_info['손절틱'])):
                             c['손절가'] = c['체결가'] - order_info['손절틱'][i] * \
-                                                  subject.info[subject_code]['단위']
+                                                  self.sbv.info[subject_code]['단위']
 
                     self.log.info('신규계약 추가, 종목코드 : ' + subject_code + ', 목표달성청산수량 ' + str(safe_num) + '개, 드리블수량 ' + str(
                         dribble_num) + '개 추가.')
@@ -127,11 +128,11 @@ class ContractManager(ManagerClass):
                 c['계약타입'][SAFE] = 0
                 c['계약타입'][DRIBBLE] = 0
 
-            c['체결가'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
+            c['체결가'] = round(float(order_info['체결표시가격']), self.sbv.info[order_info['종목코드']]['자릿수'])
             if order_info['매도수구분'] == 매수:
-                profit = (remove_cnt * (c['체결가'] - order_info['체결표시가격'])) * subject.info[subject_code]['틱가치']
+                profit = (remove_cnt * (c['체결가'] - order_info['체결표시가격'])) * self.sbv.info[subject_code]['틱가치']
             elif order_info['매도수구분'] == 매도:
-                profit = (remove_cnt * (order_info['체결표시가격'] - c.체결표시가격)) * subject.info[subject_code]['틱가치']
+                profit = (remove_cnt * (order_info['체결표시가격'] - c.체결표시가격)) * self.sbv.info[subject_code]['틱가치']
 
             return profit
         except Exception as err:

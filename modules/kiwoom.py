@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import *
 import auto_login
 import constant as const
 import screen
-import subject
+from subject import Subject
 import strategy_var as st
 import chart_manager as ctm
 import telepot_manager as tm
@@ -32,6 +32,7 @@ class Api(ModuleClass):
     subject_code = ''
 
     strategy_var = None
+    subject_var = None
 
     telepot_manager = None
     contract_manager = None
@@ -41,11 +42,14 @@ class Api(ModuleClass):
     def __init__(self, _stv=None):
         super(Api, self).__init__()
 
+        self.subject_var = Subject()
+
         # Headong Manager Set-up
         self.telepot_manager = tm.TelepotManager()
         self.contract_manager = cm.ContractManager()
-        self.chart_manager = ctm.ChartManger(_stv)
+        self.chart_manager = ctm.ChartManger(_stv, self.subject_var)
         self.strategy_manager = stm.StrategyManager()
+
 
         if const.MODE is const.REAL:
 
@@ -211,7 +215,7 @@ class Api(ModuleClass):
 
         rqTag = "해외선물옵션틱차트조회" + "_" + subject_code + "_" + tick_unit
 
-        self.comm_rq_data(rqTag, "opc10001", prevNext, subject.info[subject_code]['화면번호'])
+        self.comm_rq_data(rqTag, "opc10001", prevNext, self.subject_var.info[subject_code]['화면번호'])
 
     def request_min_info(self, subject_code, tick_unit, prevNext):
 
@@ -219,7 +223,7 @@ class Api(ModuleClass):
         self.set_input_value("시간단위", tick_unit)
 
         rqTag = "해외선물옵션분차트조회" + "_" + subject_code + "_" + tick_unit
-        self.comm_rq_data(rqTag, "opc10002", prevNext, subject.info[subject_code]['화면번호'])
+        self.comm_rq_data(rqTag, "opc10002", prevNext, self.subject_var.info[subject_code]['화면번호'])
 
     def send_request(self):
         if len(self.req) > 0:
@@ -328,7 +332,7 @@ class Api(ModuleClass):
                 # self.get_my_deposit_info()
 
                 # 종목 정보 로그 찍기
-                self.log.info("참여 종목 : %s" % subject.info.values())
+                self.log.info("참여 종목 : %s" % self.subject_var.info.values())
 
             self.send_request()
 
@@ -371,16 +375,16 @@ class Api(ModuleClass):
                                                         sRecordName, i, '종목코드n').strip()  # 현재가 = 틱의 종가
                     subject_symbol = subject_code[:2]
                     self.log.debug("상품별현재가조회, 종목코드 : %s" % subject_code)
-                    if subject_symbol in subject.info:
-                        self.log.info("금일 %s의 종목코드는 %s 입니다." % (subject.info[subject_symbol]["종목명"], subject_code))
-                        subject.info[subject_code] = subject.info[subject_symbol]
+                    if subject_symbol in self.subject_var.info:
+                        self.log.info("금일 %s의 종목코드는 %s 입니다." % (self.subject_var.info[subject_symbol]["종목명"], subject_code))
+                        self.subject_var.info[subject_code] = self.subject_var.info[subject_symbol]
                         self.strategy_var.info[subject_code] = self.strategy_var.info[subject_symbol]
-                        del subject.info[subject_symbol]
+                        del self.subject_var.info[subject_symbol]
                         del self.strategy_var.info[subject_symbol]
 
                         self.chart_manager.init_data(subject_code)
                         # 초기 데이터 요청
-                        for chart_config in self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
+                        for chart_config in self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트]:
                             type_ = chart_config[0]
                             time_unit = chart_config[1]
 
@@ -398,7 +402,7 @@ class Api(ModuleClass):
 
                 self.log.debug("해외선물옵션틱차트조회 params : %s" % params)
 
-                if subject_code in subject.info:
+                if subject_code in self.subject_var.info:
                     if const.MODE is const.REAL:
                         data_str = self.ocx.dynamicCall("GetCommFullData(QString, QString, int)", sTrCode,
                                                         sRecordName, 0)
@@ -451,7 +455,7 @@ class Api(ModuleClass):
                             self.log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
                             chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
 
-                        if len(chart_data['임시데이터']) / 7 > self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
+                        if len(chart_data['임시데이터']) / 7 > self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                             ''' 데이터 수신 완료 '''
 
                             self.log.info("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
@@ -476,12 +480,12 @@ class Api(ModuleClass):
                                     self.chart_manager.push(subject_code, chart_type, time_unit, candle)
 
                             isEnd = True
-                            for chart_config in self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
+                            for chart_config in self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트]:
                                 chart_type = chart_config[0]
                                 time_unit = chart_config[1]
 
                                 if self.chart_manager.data[subject_code][chart_type][time_unit]['인덱스'] < \
-                                        self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
+                                        self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                                     isEnd = False
                                     break
 
@@ -542,8 +546,8 @@ class Api(ModuleClass):
                 order_info['신규수량'] = contract_cnt
                 order_info['체결표시가격'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
                                                             sRecordName, 0, '평균단가').strip()
-                order_contents['익절틱'] = subject.info[order_info['종목코드']]['익절틱']
-                order_contents['손절틱'] = subject.info[order_info['종목코드']]['손절틱']
+                order_contents['익절틱'] = self.subject_var.info[order_info['종목코드']]['익절틱']
+                order_contents['손절틱'] = self.subject_var.info[order_info['종목코드']]['손절틱']
 
                 contract.add_contract(order_info, order_contents)
                 '''
@@ -589,7 +593,7 @@ class Api(ModuleClass):
                 elif const.MODE == const.TEST:  # 테스트
                     order_info = o_info
 
-                order_info['체결표시가격'] = round(float(order_info['체결표시가격']), subject.info[order_info['종목코드']]['자릿수'])
+                order_info['체결표시가격'] = round(float(order_info['체결표시가격']), self.subject_var.info[order_info['종목코드']]['자릿수'])
 
                 add_cnt = int(order_info['신규수량'])
                 remove_cnt = int(order_info['청산수량'])
@@ -625,7 +629,7 @@ class Api(ModuleClass):
         """
 
         try:
-            if subject_code not in subject.info:
+            if subject_code not in self.subject_var.info:
                 # log.error("요청하지 않은 데이터 수신. (%s, %s, %s)" % (subject_code, sRealType, sRealData))
                 return
 
@@ -641,7 +645,7 @@ class Api(ModuleClass):
                 current_price = sRealType
                 current_time = sRealData
 
-            current_price = round(float(current_price), subject.info[subject_code]['자릿수'])
+            current_price = round(float(current_price), self.subject_var.info[subject_code]['자릿수'])
 
             if const.MODE == const.REAL:
                 ''' Send Request '''
@@ -659,7 +663,7 @@ class Api(ModuleClass):
             chart_data = None
 
             ''' 캔들 생성 '''
-            for chart_config in self.strategy_var.info[subject_code][subject.info[subject_code]['전략']][const.차트]:
+            for chart_config in self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트]:
                 chart_type = chart_config[0]
                 time_unit = chart_config[1]
 

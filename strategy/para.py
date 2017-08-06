@@ -8,9 +8,10 @@ from utils.util import *
 class Para(BaseStrategy):
     running_time = 0
     
-    def __init__(self, chart, stv):
+    def __init__(self, chart, stv, sbv):
         self.chart = chart
         self.stv = stv
+        self.sbv = sbv
     
     def is_it_ok(self, subject_code, current_price):
         global running_time
@@ -197,8 +198,8 @@ class Para(BaseStrategy):
                 return 매매없음
     
             ''' 이전 플로우 수익이 매매불가수익량 이상일 때 매매 안함 '''
-            if (지난플로우[0][추세] == 상향 and (지난플로우[0][마지막SAR] - 지난플로우[0][시작SAR])*subject.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]) or \
-                (지난플로우[0][추세] == 하향 and (지난플로우[0][시작SAR] - 지난플로우[0][마지막SAR])*subject.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]):
+            if (지난플로우[0][추세] == 상향 and (지난플로우[0][마지막SAR] - 지난플로우[0][시작SAR])*self.sbv.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]) or \
+                (지난플로우[0][추세] == 하향 and (지난플로우[0][시작SAR] - 지난플로우[0][마지막SAR])*self.sbv.info[subject_code]['틱가치'] >= 차트변수[매매불가수익량]):
                 self.log.debug("이전 플로우 수익이 %s틱 이상이므로 현재 플로우는 넘어갑니다." % 차트변수[매매불가수익량])
                 return false
     

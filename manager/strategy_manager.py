@@ -12,7 +12,8 @@ class StrategyManager(ManagerClass):
 
     def __init__(self):
         super(StrategyManager, self).__init__()
-
+        self.sbv = subject.Subject()
+        
     @property
     def get_strategy_var_from_config(self):
         stv = None
@@ -22,7 +23,7 @@ class StrategyManager(ManagerClass):
             config = configparser.RawConfigParser()
             config.read(CONFIG_PATH + '/strategy_var.cfg')
 
-            for subject_code in subject.info.keys():
+            for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
                 if subject_symbol not in stv.info:
@@ -69,7 +70,7 @@ class StrategyManager(ManagerClass):
 
     def get_strategy(self, subject_code):
         strategy = None
-        if subject.info[subject_code][전략] == 파라:
+        if self.sbv.info[subject_code][전략] == 파라:
             strategy = Para()
         else:
             self.err_log.error("전략 설정 에러.")

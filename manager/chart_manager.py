@@ -18,9 +18,10 @@ class ChartManger(ManagerClass):
     def __init__(self):
         super(ChartManger, self).__init__()
 
-    def __init__(self, stv):
+    def __init__(self, stv, sbv):
         super(ChartManger, self).__init__()
         self.stv = stv
+        self.sbv = sbv
 
     def init_data(self, subject_code):
         try:
@@ -29,7 +30,7 @@ class ChartManger(ManagerClass):
             self.data[subject_code] = {}
             self.data[subject_code]['상태'] = '대기'
 
-            if subject.info[subject_code]['전략'] == const.파라:
+            if self.sbv.info[subject_code]['전략'] == const.파라:
                 for chart_config in self.stv.info[subject_code][const.파라][const.차트]:
                     chart_type = chart_config[0]
                     time_unit = chart_config[1]
@@ -62,7 +63,7 @@ class ChartManger(ManagerClass):
                         self.data[subject_code][chart_type][time_unit]['시간단위'] = time_unit
 
                         self.data[subject_code][chart_type][time_unit][const.이동평균선] = {}
-                        self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수'] = self.stv.info[subject_code][subject.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.이동평균선]
+                        self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수'] = self.stv.info[subject_code][self.sbv.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.이동평균선]
                         self.data[subject_code][chart_type][time_unit]['지수이동평균선'] = {}
 
                         for days in self.data[subject_code][chart_type][time_unit][const.이동평균선]['일수']:
@@ -154,7 +155,7 @@ class ChartManger(ManagerClass):
 
     def calc(self, subject_code, chart_type, time_unit):
         try:
-            if subject.info[subject_code]['전략'] == const.파라:
+            if self.sbv.info[subject_code]['전략'] == const.파라:
                 self.calc_ma_line(subject_code, chart_type, time_unit)
                 #calc_ema_line(subject_code, chart_type, time_unit)
                 #calc_ilmok_chart(subject_code, chart_type, time_unit)

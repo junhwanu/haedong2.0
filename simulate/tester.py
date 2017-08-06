@@ -24,16 +24,18 @@ class Tester:
 
     def __init__(self):
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+        self.sbv = subject.Subject()
 
-    def simulate(kw, result):
+    def simulate(self, kw, result):
         record = {}
         chart_data = kw.chart.data
         stv_info = kw.stv.info
+        sbv_info = kw.sbv.info
         subject_list = stv_info.keys()
         chart_type = {}
         time_unit = {}
         for subject_code in subject_list:
-            chart_type[subject_code] = stv_info[subject_code][subject.info[subject_code]][차트][0][0]
+            chart_type[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
             time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
 
             for idx in range(0, chart_data):
@@ -51,7 +53,7 @@ class Tester:
         log.info('종목코드를 입력하세요. [ ex) GC ]')
         subject_symbol = input()
 
-        if subject_symbol not in subject.info:
+        if subject_symbol not in self.sbv.info:
             log.info('잘못된 종목코드입니다.')
             self.proc()
             return
@@ -81,7 +83,7 @@ class Tester:
                 if subject_code not in table_list:
                     table_list[subject_code] = []
                     subject_codes.append(subject_code)
-                    subject.info[subject_code] = subject.info[subject_symbol]   # 종목정보 복사
+                    self.sbv.info[subject_code] = self.sbv.info[subject_symbol]   # 종목정보 복사
                     st.info[subject_code] = st.info[subject_symbol] # 전략변수 복사
 
                 table_list[subject_code].append(table_name)
@@ -189,7 +191,7 @@ class Tester:
             config.read(CONFIG_PATH + '/tester_var.cfg')
             stv = Strategy_Var()
 
-            for subject_code in subject.info.keys():
+            for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
                 if subject_symbol not in stv.info:
@@ -248,7 +250,7 @@ class Tester:
             config = configparser.RawConfigParser()
             config.read(CONFIG_PATH + '/tester_var.cfg')
 
-            for subject_code in subject.info.keys():
+            for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
                 strategy = config.get(ST_CONFIG, subject_symbol)
@@ -299,7 +301,7 @@ class Tester:
             config.read(CONFIG_PATH + '/tester_var.cfg')
 
             stv = Strategy_Var()
-            for subject_code in subject.info.keys():
+            for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
                 if subject_symbol not in stv.info:
