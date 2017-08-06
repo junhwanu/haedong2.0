@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 import telepot
 from __manager import ManagerClass
+import singleton
 
 # Singleton class --> there is only one log manager
 
-TOKEN = '339704326:AAEXoMPlPLsuA5uMqdCUF-Wq5QMyKqNsgYo'
 
-
-class TelepotManager(ManagerClass):
+class TelepotManager(metaclass=singleton.SingletonInstane):
+    TOKEN = '339704326:AAEXoMPlPLsuA5uMqdCUF-Wq5QMyKqNsgYo'
     id_list = []
 
-    def __init__(self):
+    def __init__(self, account):
         super(TelepotManager, self).__init__()
 
     def set_account(self, account):
-        super(TelepotManager, self).__init__()
+        self.id_list = []
 
         if account is None:
             self.id_list.append(285446312) # 진모
@@ -31,7 +31,7 @@ class TelepotManager(ManagerClass):
         if len(self.id_list) == 0:
             return
 
-        bot = telepot.Bot(TOKEN)
+        bot = telepot.Bot(self.TOKEN)
         for id_ in self.id_list:
             bot.sendMessage(id_, msg)
 

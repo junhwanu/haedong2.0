@@ -5,7 +5,6 @@ import strategy_var as st
 import kiwoom
 import constant as const
 from db_manager import *
-import log_manager as Log
 import chart_manager as chart
 import configparser
 import json
@@ -14,6 +13,7 @@ from multiprocessing import Process, Queue
 from kiwoom_tester import *
 from util import *
 import subprocess
+from log_manager import LogManager
 
 
 class Tester:
@@ -23,7 +23,7 @@ class Tester:
     log, res, err_log = None, None, None
 
     def __init__(self):
-        self.log, self.res, self.err_log = Log.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
         self.sbv = subject.Subject()
 
     def simulate(self, kw, result):
@@ -303,7 +303,7 @@ class Tester:
             err_log.error(log_manager.get_error_msg(err))
             return None, None
 
-    def set_simulate_config(subject_code):
+    def set_simulate_config(self, subject_code):
 
         try:
             # 전략 변수 Config 불러오기

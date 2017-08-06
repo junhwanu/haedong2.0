@@ -12,10 +12,8 @@ import screen
 from subject import Subject
 import strategy_var as st
 import chart_manager as ctm
-import telepot_manager as tm
 import contract_manager as cm
 import strategy_manager as stm
-#from utils import utilZ
 from util import *
 from __module import ModuleClass
 
@@ -34,7 +32,6 @@ class Api(ModuleClass):
     strategy_var = None
     subject_var = None
 
-    telepot_manager = None
     contract_manager = None
     chart_manager = None
     strategy_manager = None
@@ -45,14 +42,11 @@ class Api(ModuleClass):
         self.subject_var = Subject()
 
         # Headong Manager Set-up
-        self.telepot_manager = tm.TelepotManager()
         self.contract_manager = cm.ContractManager()
         self.chart_manager = ctm.ChartManger(_stv, self.subject_var)
         self.strategy_manager = stm.StrategyManager()
 
-
         if const.MODE is const.REAL:
-
             # Kiwoom set-up
             self.log.info("해동이2.0 실제투자 시작 합니다.")
             self.app = QApplication(sys.argv)
@@ -321,8 +315,8 @@ class Api(ModuleClass):
             self.log.info("로그인 성공")
             # 계좌번호 저장
             self.account = self.get_login_info("ACCNO")
-            self.telepot_manager.set_account(self.account)
-            self.telepot_manager.send_message('해동이 정상 시작 됨.')
+            self.telepot.set_account(self.account)
+            self.telepot.send_message('해동이 정상 시작 됨.')
             self.log.info("계좌번호 : " + self.account)
 
             if const.MODE is const.REAL:
@@ -605,7 +599,7 @@ class Api(ModuleClass):
                     수익 = self.contract_manager.remove_contract(order_info)
                     self.누적수익 += 수익
 
-                    self.telepot_manager.send_message('%s, 체결수익 : %s, 누적수익 : %s' % (msg, 수익, self.누적수익))
+                    self.telepot.send_message('%s, 체결수익 : %s, 누적수익 : %s' % (msg, 수익, self.누적수익))
 
                 ''' 신규 매매 체결 '''
                 if add_cnt > 0:
@@ -613,7 +607,7 @@ class Api(ModuleClass):
                     self.res.info('신규주문 체결 [%s]' % order_info)
                     self.contract_manager.add_contract(order_info)
 
-                    self.telepot_manager.send_message(msg)
+                    self.telepot.send_message(msg)
 
         except Exception as err:
             self.log.error(get_error_msg(err))

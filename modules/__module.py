@@ -1,14 +1,17 @@
 import abc
 import inspect
-import log_manager as Log
+from log_manager import LogManager
+from telepot_manager import TelepotManager
 
 
 class ModuleClass(metaclass=abc.ABCMeta):
     log, res, err_log = None, None, None
+    telepot = None
 
     def __init__(self):
         super(ModuleClass, self).__init__()
         self.init_logger()
+        self.init_telepot()
 
     @abc.abstractmethod
     def get_name(self):
@@ -19,4 +22,7 @@ class ModuleClass(metaclass=abc.ABCMeta):
         raise NotImplementedError(inspect.stack()[0][3] + ' is not impplemented.')
 
     def init_logger(self):
-        self.log, self.res, self.err_log = Log.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+
+    def init_telepot(self):
+        self.telepot = TelepotManager.__call__()
