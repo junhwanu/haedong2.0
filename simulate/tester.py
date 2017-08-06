@@ -36,13 +36,23 @@ class Tester:
         time_unit = {}
         for subject_code in subject_list:
             chart_type[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-            time_unit[subject_code] = stv_info[subject_code]['전략찾아서넣고'][차트][0][1]
+            time_unit[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
 
-            for idx in range(0, chart_data):
-                '''
-                
-                '''
-                pass
+            for idx in range(0, chart_data[subject_code][chart_type][time_unit]):
+                candle = {
+                    현재가 :   chart_data[subject_code][chart_type][time_unit][현재가][idx],
+                    고가  :   chart_data[subject_code][chart_type][time_unit][고가][idx],
+                    저가  :   chart_data[subject_code][chart_type][time_unit][저가][idx],
+                    시가  :   chart_data[subject_code][chart_type][time_unit][시가][idx]
+                }
+
+                order_info = kw.check_contract_in_candle(subject_code, candle, idx)
+
+                if order_info[신규매매] is True:
+                    kw.send_order[order_info]
+
+        record['전략변수'] = kw.stv
+        record['누적수익'] = kw.누적수익
 
     def proc(self):
         global running_time

@@ -27,7 +27,12 @@ class KiwoomTester(ModuleClass):
     def print_status(self):
         print(self.__getattribute__())
 
-    def send_order(self):
+    def send_order(self, order_info):
+        #   여기서 order_info 정보 확인
+        #   계약이 없으면 신규매매, 있으면 청산
+        #   해당 함수에서 분기해서 add_contract, remove_contract 호출
+        #   누적 수익은 remove_contract에서 계산
+
         pass
 
     def calc_profit(self):

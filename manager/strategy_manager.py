@@ -13,8 +13,7 @@ class StrategyManager(ManagerClass):
     def __init__(self):
         super(StrategyManager, self).__init__()
         self.sbv = subject.Subject()
-        
-    @property
+
     def get_strategy_var_from_config(self):
         stv = None
 
