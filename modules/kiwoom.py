@@ -48,7 +48,7 @@ class Api(ModuleClass):
         self.telepot_manager = tm.TelepotManager()
         self.contract_manager = cm.ContractManager()
         self.chart_manager = ctm.ChartManger(_stv, self.subject_var)
-        self.strategy_manager = stm.StrategyManager()
+        self.strategy_manager = stm.StrategyManager(self.subject_var)
 
 
         if const.MODE is const.REAL:

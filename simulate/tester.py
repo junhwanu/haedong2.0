@@ -54,6 +54,8 @@ class Tester:
         record['전략변수'] = kw.stv
         record['누적수익'] = kw.누적수익
 
+        result.append(record)
+
     def proc(self):
         global running_time
         dbm = DBManager()
