@@ -29,6 +29,7 @@ class Login(ModuleClass, threading.Thread):
     MODULE_PATH = os.path.dirname(os.path.abspath(__file__).replace('\\', '/'))
 
     def __init__(self):
+        super(Login, self).__init__()
         threading.Thread.__init__(self)
         self.__suspend = False
         self.__exit = False
@@ -62,15 +63,15 @@ class Login(ModuleClass, threading.Thread):
                 self.AUTO_LOGIN = False
 
         else:
-            print('Auto Login Config File을 찾을 수 없습니다.')
+            self.log.info("Auto Login Config File을 찾을 수 없습니다.")
+            self.log.info('자동 로그인 기능을 사용 할 수 없습니다.')
             self.AUTO_LOGIN = False
-            time.sleep(1)
 
     def auto_login(self):
         if self.REAL_INVEST:
-            print("실제 투자용 자동 로그인")
+            self.log.info("실제 투자용 모드")
         else:
-            print("모의 투자용 자동 로그인")
+            self.log.info("모의 투자용 모드")
 
         time.sleep(3)
 
@@ -81,11 +82,11 @@ class Login(ModuleClass, threading.Thread):
             for proc in psutil.process_iter():
                 if proc.name() in self.LOGIN_PNAME:
                     login_pid = proc.pid
-                    print('로그인 프로그램 pid(%d)' % login_pid)
+                    self.log.info("로그인 프로그램 pid(" + str(login_pid) + ")")
                     looping_flag = False
 
             if looping_flag:
-                print("로그인 프로그램을 찾는 중입니다.")
+                self.log.info("로그인 프로그램을 찾는 중입니다. (5초 주기)")
                 time.sleep(5)
 
         app = pywinauto.Application().connect(process=login_pid)
@@ -94,50 +95,49 @@ class Login(ModuleClass, threading.Thread):
         dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
 
         try:
-            dlg.Edit1.SetFocus()
+            계정입력 = dlg.Edit1
+            계정입력.SetFocus()
+            계정입력.TypeKeys(self.USER_ID)
+            self.log.info("키움 사용자 ID(" + str(self.USER_ID) + ")")
+
+            비밀번호입력 = dlg.Edit2
+            비밀번호입력.SetFocus()
+            비밀번호입력.TypeKeys(self.USER_PASSWD)
+            self.log.info("키움 사용자 PASSWORD(" + str(self.USER_PASSWD) + ")")
+
+            # 모의투자
+            if self.REAL_INVEST:
+                공인인증서비밀번호 = dlg.Edit3
+                공인인증서비밀번호.SetFocus()
+                공인인증서비밀번호.TypeKeys(self.AUTH_PASSWD)
+                self.log.info("공인인증서 PASSWORD(" + str(self.AUTH_PASSWD) + ")")
+
+            로그인버튼 = dlg.Button0
+            로그인버튼.Click()
+
         except pywinauto.findwindows.ElementNotFoundError as err:
-            time.sleep(3)
-            print("로그인 윈도우를 찾지 못했습니다(%s). 5초후 재시도")
+            self.log.info("로그인 윈도우를 찾지 못했습니다")
+            return False
 
-        계정입력 = dlg.Edit1
-        계정입력.SetFocus()
-        계정입력.TypeKeys(self.USER_ID)
-        print('키움 사용자 ID(%s)' % self.USER_ID)
-
-        비밀번호입력 = dlg.Edit2
-        비밀번호입력.SetFocus()
-        비밀번호입력.TypeKeys(self.USER_PASSWD)
-        print('키움 사용자 PASSWORD(%s)' % self.USER_PASSWD)
-
-        # 모의투자
-        if self.REAL_INVEST:
-            공인인증서비밀번호 = dlg.Edit3
-            공인인증서비밀번호.SetFocus()
-            공인인증서비밀번호.TypeKeys(self.AUTH_PASSWD)
-            print('공인인증서 PASSWORD(%s)' % self.AUTH_PASSWD)
-
-        로그인버튼 = dlg.Button0
-        로그인버튼.Click()
+        return True
 
     def auto_write_passwd(self):
         화면x, 화면y = pyautogui.size()
         아이콘 = Image.open(self.MODULE_PATH + '/../resource/kf.png')
 
         while True:
-            print('트레이 아이콘을 찾는 중입니다.')
+            self.log.info("트레이 아이콘을 찾는 중입니다.")
             아이콘위치 = pyautogui.locateCenterOnScreen(아이콘, region=(화면x - 400, 화면y - 100, 400, 100), confidence=.5)
 
             if 아이콘위치:
-                print('트레이 아이콘을 찾았습니다.')
-                print(아이콘위치)
+                self.log.info("트레이 아이콘을 찾았습니다." + str(아이콘위치))
                 x, y = 아이콘위치
-                print(x, y)
                 pyautogui.click(x, y, button='right')
                 break
 
         time.sleep(2)
         # 등록 버튼 누르기
-        print('등록버튼 누르기')
+        self.log.info("등록버튼 누르기")
         pyautogui.moveRel(10, -35)
         pyautogui.click()
 
@@ -150,11 +150,11 @@ class Login(ModuleClass, threading.Thread):
             for proc in psutil.process_iter():
                 if proc.name() in self.PYTHON_PNAME:
                     kfopcom_pid = proc.pid
-                    print('거래 프로그램 pid(%d)' % kfopcom_pid)
+                    self.log.info("거래 프로그램 pid(" + str(kfopcom_pid) + ")")
                     looping_flag = False
 
             if looping_flag:
-                print("거래 프로그램을 찾는 중입니다.")
+                self.log.info("거래 프로그램을 찾는 중입니다.")
                 time.sleep(5)
 
         time.sleep(5)
@@ -165,48 +165,61 @@ class Login(ModuleClass, threading.Thread):
         dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title=title))
         # app.window_().print_control_identifiers()
 
-        비밀번호수정 = dlg.Edit1
-        비밀번호수정.SetFocus()
-        비밀번호수정.Click()
-        비밀번호수정.TypeKeys(self.ACCOUNT_PASSWD)
-        print(self.ACCOUNT_PASSWD)
+        try:
+            비밀번호수정 = dlg.Edit1
+            비밀번호수정.SetFocus()
+            비밀번호수정.Click()
+            비밀번호수정.TypeKeys(self.ACCOUNT_PASSWD)
+            # self.log.info(self.ACCOUNT_PASSWD)
 
-        time.sleep(0.5)
+            time.sleep(0.5)
 
-        일괄저장버튼 = dlg.Button3
-        일괄저장버튼.Click()
+            일괄저장버튼 = dlg.Button3
+            일괄저장버튼.Click()
 
-        time.sleep(0.5)
+            time.sleep(0.5)
 
-        닫기버튼 = dlg.Button2
-        닫기버튼.Click()
+            닫기버튼 = dlg.Button2
+            닫기버튼.Click()
 
-        return
+        except pywinauto.findwindows.ElementNotFoundError as err:
+            self.log.info("거래 비밀번호 윈도우를 찾지 못했습니다")
+            return False
+
+        return True
 
     def run(self):
         if self.AUTO_LOGIN is False:
-            print("자동 로그인을 사용하지 않습니다.")
+            self.log.info("자동 로그인을 사용하지 않습니다.")
             return
 
-        self.auto_login()
+        self.log.info("자동 로그인 사용합니다.")
+        while self.auto_login() is False:
+            self.log.info("자동 로그인 실패! 5초 후 다시 시도합니다.")
+            time.sleep(5)
+            continue
+            self.log.info("로그인 화면 정상처리 완료되었습니다.")
 
-        time.sleep(15)
+        time.sleep(10)
 
         # 자동 비밀번호 입력
         if self.AUTO_WRITE_PASSWD is False:
-            print('자동 비밀번호 입력을 사용하지 않습니다.')
+            self.log.info("자동 비밀번호 입력을 사용하지 않습니다.")
             return
 
-        self.auto_write_passwd()
-
-        print("Auto Login Thread 종료")
-        # self.account_password_setup()
+        self.log.info("자동 비밀번호 입력 사용합니다.")
+        while self.auto_write_passwd() is False:
+            self.log.info("자동 비밀번호 입력 실패! 5초 후 다시 시도합니다.")
+            time.sleep(5)
+            continue
+        self.log.info("비밀번호 입력 화면 정상 처리!")
+        self.log.info("Auto Login 정상 종료")
 
     def get_name(self):
         return str(self.__class__.__name__)
 
     def print_status(self):
-        print(self.__getattribute__())
+        self.log.info(self.__getattribute__())
 
 if __name__ == '__main__':
     login = Login()

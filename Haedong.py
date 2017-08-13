@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys, os, time, threading
+
+from pywin.mfc.object import Object
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/modules');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/constant');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/manager');
@@ -20,7 +23,7 @@ import health_server
 from log_manager import LogManager
 
 
-class Haedong():
+class Haedong(Object):
     running_time = 0
     log, res, err_log = None, None, None
 
@@ -56,6 +59,7 @@ class Haedong():
 
             print("다시 입력해주세요.")
 
+        '''
         self.running_time = time.time() - s_time
 
         self.log.info("Total running time : %s" % self.running_time)
@@ -64,6 +68,7 @@ class Haedong():
             "para running time : %s, %s%s" % (para.running_time, round(para.running_time * 100 / self.running_time, 2), '%'))
         self.log.info("db test running time : %s, %s%s" % (
         tester.running_time, round(tester.running_time * 100 / self.running_time, 2), '%'))
+        '''
 
 
 if __name__ == "__main__":
