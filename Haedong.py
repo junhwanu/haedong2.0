@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys, os, time, threading
 
-from pywin.mfc.object import Object
-
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/modules');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/constant');
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\','/') + '/manager');
@@ -23,7 +21,7 @@ import health_server
 from log_manager import LogManager
 
 
-class Haedong(Object):
+class Haedong():
     running_time = 0
     log, res, err_log = None, None, None
 
