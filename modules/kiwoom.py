@@ -67,7 +67,7 @@ class Api(ModuleClass):
             self.chart_manager.set_stv(self.strategy_var)
 
         else:
-            self.log.info("MODE:"+str(const.MODE))
+            self.log.debug("MODE:"+str(const.MODE))
 
     '''
     Interface Methods
@@ -84,14 +84,14 @@ class Api(ModuleClass):
         if self.ocx.dynamicCall("GetConnectState()") == 0:
             rtn = self.ocx.dynamicCall("CommConnect(1)")
             if rtn == 0:
-                self.log.info("연결 성공")
+                self.log.debug("연결 성공")
 
                 # auto login
                 lg = auto_login.Login()
                 lg.start()
 
             else:
-                self.log.info("연결 실패")
+                self.log.debug("연결 실패")
 
             return rtn
 
@@ -309,15 +309,15 @@ class Api(ModuleClass):
 
         :param nErrCode: 에러 코드 - 0이면 로그인 성공, 음수면 실패, 에러코드 참조
         """
-        self.log.info("OnEventConnect received")
+        self.log.debug("OnEventConnect received")
 
         if nErrCode == 0:
-            self.log.info("로그인 성공")
+            self.log.debug("로그인 성공")
             # 계좌번호 저장
             self.account = self.get_login_info("ACCNO")
             self.telepot.set_account(self.account)
             self.telepot.send_message('해동이 정상 시작 됨.')
-            self.log.info("계좌번호 : " + self.account)
+            self.log.debug("계좌번호 : " + self.account)
 
             if const.MODE is const.REAL:
                 # 다이나믹 종목 정보 요청
@@ -326,7 +326,7 @@ class Api(ModuleClass):
                 # self.get_my_deposit_info()
 
                 # 종목 정보 로그 찍기
-                self.log.info("참여 종목 : %s" % self.subject_var.info.values())
+                self.log.debug("참여 종목 : %s" % self.subject_var.info.values())
 
             self.send_request()
 
@@ -359,7 +359,7 @@ class Api(ModuleClass):
         :param sSplmMsg: 1.0.0.1 버전 이후 사용하지 않음.
         """
         self.log.debug("current thread : %s" % threading.current_thread().__class__.__name__)
-        self.log.info("onReceiveTrData, sScrNo : %s, sRQName : %s, sTrCode : %s, sRecordName : %s, sPreNext : %s" % (sScrNo, sRQName, sTrCode, sRecordName, sPreNext))
+        self.log.debug("onReceiveTrData, sScrNo : %s, sRQName : %s, sTrCode : %s, sRecordName : %s, sPreNext : %s" % (sScrNo, sRQName, sTrCode, sRecordName, sPreNext))
 
         try:
             if sRQName == '상품별현재가조회':
@@ -370,7 +370,7 @@ class Api(ModuleClass):
                     subject_symbol = subject_code[:2]
                     self.log.debug("상품별현재가조회, 종목코드 : %s" % subject_code)
                     if subject_symbol in self.subject_var.info:
-                        self.log.info("금일 %s의 종목코드는 %s 입니다." % (self.subject_var.info[subject_symbol]["종목명"], subject_code))
+                        self.log.debug("금일 %s의 종목코드는 %s 입니다." % (self.subject_var.info[subject_symbol]["종목명"], subject_code))
                         self.subject_var.info[subject_code] = self.subject_var.info[subject_symbol]
                         self.strategy_var.info[subject_code] = self.strategy_var.info[subject_symbol]
                         del self.subject_var.info[subject_symbol]
@@ -405,7 +405,7 @@ class Api(ModuleClass):
 
                         if len(chart_data['임시데이터']) == 0:
                             ''' 가장 처음 데이터가 수신 되었을 때 '''
-                            self.log.info("데이터 수신 시작. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            self.log.debug("데이터 수신 시작. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
                             chart_data['임시데이터'] = data_str.split()
 
                             chart_data['현재가변동횟수'] = int(chart_data['임시데이터'][0])
@@ -446,13 +446,13 @@ class Api(ModuleClass):
                                         self.chart_manager.push(subject_code, chart_type, time_unit, chart_data['현재캔들'])
                         else:
                             ''' 데이터 수신 중간 '''
-                            self.log.info("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            self.log.debug("데이터 수신 중. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
                             chart_data['임시데이터'] = chart_data['임시데이터'] + data_str.split()[1:]
 
                         if len(chart_data['임시데이터']) / 7 > self.strategy_var.info[subject_code][self.subject_var.info[subject_code]['전략']][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                             ''' 데이터 수신 완료 '''
 
-                            self.log.info("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
+                            self.log.debug("데이터 수신 완료. 차트구분 : %s, 시간단위 : %s" % (chart_type, time_unit))
                             current_idx = len(chart_data['임시데이터']) - 7
 
                             candle = {}
@@ -469,7 +469,7 @@ class Api(ModuleClass):
                                 self.chart_manager.push(subject_code, chart_type, time_unit, candle)
 
                             if len(chart_data['임시캔들']) > 0:
-                                self.log.info("데이터 수신 중 완성된 임시캔들들 Push.")
+                                self.log.debug("데이터 수신 중 완성된 임시캔들들 Push.")
                                 for candle in chart_data['임시캔들']:
                                     self.chart_manager.push(subject_code, chart_type, time_unit, candle)
 
@@ -514,7 +514,7 @@ class Api(ModuleClass):
                 order_info['신규수량'] = contract_cnt
                 order_info['체결표시가격'] = self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode,
                                                             sRecordName, 0, '평균단가').strip()
-                self.log.info("미결제잔고내역조회 : %s", order_info)
+                self.log.debug("미결제잔고내역조회 : %s", order_info)
 
                 '''
                 if self.state == '매매가능': return
@@ -551,7 +551,7 @@ class Api(ModuleClass):
                 self.contract_manager.예수금 = int(
                     self.ocx.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRecordName, 0,
                                          '주문가능금액').strip())
-                self.log.info('예수금 현황 : ' + str(self.contract_manager.예수금))
+                self.log.debug('예수금 현황 : ' + str(self.contract_manager.예수금))
 
         except Exception as err:
             self.log.error(get_error_msg(err))
@@ -715,7 +715,8 @@ class Api(ModuleClass):
             self.strategy_manager.strategy_selector(subject_code)
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            pass
+            # self.log.error(get_error_msg(err))
 
     ####################################################
     # Test Function

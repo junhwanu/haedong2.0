@@ -56,6 +56,7 @@ class LogManager(metaclass=singleton.SingletonInstane):
         self.res_logger.addHandler(res_stream_handler)
 
         self.info_logger.setLevel(logging.DEBUG)
+        # self.info_logger.setLevel(logging.INFO)
         self.res_logger.setLevel(logging.INFO)
 
         print("Initialize Log Manager")
