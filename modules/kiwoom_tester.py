@@ -3,6 +3,7 @@
 import chart_manager as ctm
 import log_manager
 import strategy_manager as stm
+from subject import Subject
 from __module import ModuleClass
 
 log = None
@@ -20,6 +21,7 @@ class KiwoomTester(ModuleClass):
         log, res, err_log = log_manager.Log().get_logger()
         self.stv = _stv
         self.chart = ctm.Chart_Manger(self.stv)
+        self.stm = stm.StrategyManager(Subject())
 
     def get_name(self):
         return str(self.__class__.__name__)
@@ -45,5 +47,5 @@ class KiwoomTester(ModuleClass):
         pass
 
     def check_contract_in_candle(self, 종목코드, 캔들, 인덱스):
-        return stm.check_contract_in_candle(종목코드, 캔들, 인덱스)
+        return self.stm.check_contract_in_candle(종목코드, 캔들, 인덱스)
 
