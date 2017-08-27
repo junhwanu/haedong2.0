@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-import subject
-import para
-from constant import *
+from var import subject
+from strategy import para
+from constant.constant import *
 from utils.util import *
-from __manager import ManagerClass
+from manager import __manager
 
 SAFE = '목표달성청산'
 DRIBBLE = '드리블'
 ALL = '전체'
 
 
-class ContractManager(ManagerClass):
+class ContractManager(__manager.ManagerClass):
     contract_list = {}
 
     '''

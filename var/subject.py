@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import screen
-from constant import *
+from constant import screen, constant
+from constant.constant import *
 
 class Subject():
     info = {

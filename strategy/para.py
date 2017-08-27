@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-import contract_manager as cm
-from __base_strategy import BaseStrategy
-from constant import *
-from utils.util import *
+import time
+from manager import contract_manager as cm, chart_manager as chart
+from strategy import __base_strategy
+from constant.constant import *
+from utils import util
 
 
-class Para(BaseStrategy):
+class Para(__base_strategy.BaseStrategy):
     running_time = 0
     
     def __init__(self, chart, stv, sbv):
@@ -45,7 +46,7 @@ class Para(BaseStrategy):
             #if chart.data[subject_code]['상태'] == '대기':  chart.data[subject_code]['상태'] = '매매가능'
     
             ''' 매매 불가 시간 '''
-            if 2100 < get_time(0,subject_code) < 2230:
+            if 2100 < util.get_time(0,subject_code) < 2230:
                 running_time = running_time + (time.time() - s_time)
                 return false
     
@@ -56,7 +57,7 @@ class Para(BaseStrategy):
             running_time = running_time + (time.time() - s_time)
             return order_contents
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
     
             running_time = running_time + (time.time() - s_time)
             return false
@@ -151,7 +152,7 @@ class Para(BaseStrategy):
             running_time = running_time + (time.time() - s_time)
             return order_info
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
     
             running_time = running_time + (time.time() - s_time)
             return false
@@ -191,8 +192,8 @@ class Para(BaseStrategy):
     
     
             ''' 반전시 매매'''
-            if (차트['현재플로우'] == 상향 and is_sorted(subject_code, 차트타입, 시간단위) != 상승세) or \
-                    (차트['현재플로우'] == 하향 and is_sorted(subject_code, 차트타입, 시간단위) != 하락세):
+            if (차트['현재플로우'] == 상향 and util.is_sorted(subject_code, 차트타입, 시간단위) != 상승세) or \
+                    (차트['현재플로우'] == 하향 and util.is_sorted(subject_code, 차트타입, 시간단위) != 하락세):
                 ''' 이동평균선 안맞을 시 매매 안함 '''
                 self.log.debug('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
                 return 매매없음
@@ -232,7 +233,7 @@ class Para(BaseStrategy):
             return 매도수구분
     
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
             return 매매없음
 
     def get_buy_count(self, subject_code, current_price):

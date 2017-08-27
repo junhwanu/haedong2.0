@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-import subject
-from para import Para
-from constant import *
 import configparser
 import json
+from var import subject, strategy_var
+from strategy import para
+from constant.constant import *
+
+
+from manager import __manager
 from utils.util import *
-import strategy_var
-from __manager import ManagerClass
 
 
-class StrategyManager(ManagerClass):
+class StrategyManager(__manager.ManagerClass):
 
     def __init__(self, sbv):
         super(StrategyManager, self).__init__()
@@ -71,7 +72,7 @@ class StrategyManager(ManagerClass):
     def get_strategy(self, subject_code):
         strategy = None
         if self.sbv.info[subject_code][전략] == 파라:
-            strategy = Para()
+            strategy = para.Para()
         else:
             self.err_log.error("전략 설정 에러.")
         return strategy

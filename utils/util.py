@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
-import datetime, time
-import constant as const
-import chart_manager as chart
-import strategy_var as st
-import subject
+#  -*- coding: utf-8 -*-
 import sys
 import os
+import datetime
+import time
+from constant import constant as const
+from manager import chart_manager
+from var import strategy_var, subject
+
 
 def get_today_date():
     today = datetime.date.today()
@@ -33,9 +34,9 @@ def get_time(add_min, subject_code):
 
     elif const.MODE == const.TEST:  # 테스트
         sbv = subject.Subject()
-        chart_type = st.info[subject_code][ sbv.info[subject_code]['전략'] ][const.차트][0][0]
-        time_unit = st.info[subject_code][ sbv.info[subject_code]['전략'] ][const.차트][0][1]
-        chart_data = chart.data[subject_code][chart_type][time_unit]
+        chart_type = strategy_var.info[subject_code][ sbv.info[subject_code]['전략'] ][const.차트][0][0]
+        time_unit = strategy_var.info[subject_code][ sbv.info[subject_code]['전략'] ][const.차트][0][1]
+        chart_data = chart_manager.data[subject_code][chart_type][time_unit]
 
         current_hour = int(str(chart_data['체결시간'][-1])[8:10])
         current_min = int(str(chart_data['체결시간'][-1])[10:12]) + add_min
@@ -48,8 +49,8 @@ def get_time(add_min, subject_code):
     return int(current_time)
 
 def is_sorted(subject_code, chart_type, time_unit):
-    lst = st.info[subject_code][const.파라]['차트변수'][chart_type][time_unit]['이동평균선']
-    차트 = chart.data[subject_code][chart_type][time_unit]
+    lst = strategy_var.info[subject_code][const.파라]['차트변수'][chart_type][time_unit]['이동평균선']
+    차트 = chart_manager.data[subject_code][chart_type][time_unit]
 
     if max(lst) - 1 > 차트['인덱스']:
         return '모름'

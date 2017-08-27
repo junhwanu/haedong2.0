@@ -9,10 +9,10 @@ import os
 import pyautogui
 import cv2
 from PIL import Image
-from __module import ModuleClass
+from modules import __module
 
 
-class Login(ModuleClass, threading.Thread):
+class Login(__module.ModuleClass, threading.Thread):
     REAL_INVEST = False
     AUTO_LOGIN = True
 

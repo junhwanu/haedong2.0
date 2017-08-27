@@ -1,37 +1,33 @@
 # -*- coding: utf-8 -*-
+
 import sys, os, time, threading
-import constant as const
-import tester
-import kiwoom
-import chart_manager as chart
-import para
-import health_server
-from log_manager import LogManager
+from modules import kiwoom, health_server
+from manager import log_manager
+from constant import constant as const
+from simulate import tester
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/modules');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/constant');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/manager');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/net');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/simulate');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/strategy');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/chart');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/var');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/viewer');
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)).replace('\\', '/') + '/config');
+# import simulate.tester as tester
+# import constant.constant as const
+# import modules.kiwoom as kiwoom
+# import modules.health_server as health_server
+
+# from manager.log_manager import LogManager
+# import strategy.para as para
+# import chart_manager as chart
 
 
-class Haedong():
+class Haedong:
     running_time = 0
     log, res, err_log = None, None, None
 
     def __init__(self):
         super(Haedong, self).__init__()
-        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()
 
     def run(self):
         s_time = time.time()
 
-        while (True):
+        while True:
             if len(sys.argv) == 1:
                 self.log.info("실제투자(1), 테스트(2)")
                 const.MODE = int(input())
@@ -51,7 +47,8 @@ class Haedong():
                 break
 
             elif const.MODE is const.TEST:
-                tester.proc()
+                test = tester.Tester()
+                test.proc()
                 break
 
             print("다시 입력해주세요.")

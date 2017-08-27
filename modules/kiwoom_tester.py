@@ -1,23 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import chart_manager as ctm
-import log_manager
-import strategy_manager as stm
-from __module import ModuleClass
+from manager import chart_manager as ctm, strategy_manager as stm
+from modules import __module
 
-log = None
-res = None
-err_log = None
 
-class KiwoomTester(ModuleClass):
+class KiwoomTester(__module.ModuleClass):
     chart = None
     stv = None
     누적수익 = 0
 
     def __init__(self, _stv = None):
         super(KiwoomTester, self).__init__()
-        global log, res, err_log
-        log, res, err_log = log_manager.Log().get_logger()
         self.stv = _stv
         self.chart = ctm.Chart_Manger(self.stv)
 

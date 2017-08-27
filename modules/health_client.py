@@ -8,7 +8,7 @@ import sys
 
 # Headong과 독립적인 Module
 # 호스트, 포트와 버퍼 사이즈를 지정
-TARGET_HOST = 'localhost'
+TARGET_HOST = '211.253.11.13'
 HEALTH_PORT = 56789
 BUFF_SIZE = 1024
 

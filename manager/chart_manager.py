@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import time
-import subject
-import strategy_var as st
-import constant as const
-from utils.util import *
-from __manager import ManagerClass
+from manager import __manager
+from constant import constant as const
+from utils import util
+from var import subject, strategy_var as st
+
 
 common_data = {}
 
 
-class ChartManger(ManagerClass):
+class ChartManger(__manager.ManagerClass):
     data = {}
     stv = None
 
@@ -111,7 +111,7 @@ class ChartManger(ManagerClass):
             self.running_time = self.running_time + (time.time() - s_time)
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def clear_data(self, subject_code):
         del self.data[subject_code]
@@ -146,7 +146,7 @@ class ChartManger(ManagerClass):
             self.running_time = self.running_time + (time.time() - s_time)
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def calc_common_data(self, subject_code, chart_type, time_unit):
         for idx in range(0, len(self.data[subject_code][chart_type][time_unit])):
@@ -169,7 +169,7 @@ class ChartManger(ManagerClass):
                     self.calc_sar(subject_code, chart_type, time_unit)
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def calc_ma_line(self, subject_code, chart_type, time_unit):
         '''
