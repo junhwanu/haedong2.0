@@ -85,4 +85,3 @@ class StrategyManager(__manager.ManagerClass):
 
     def print_status(self):
         print(self.__getattribute__())
-
