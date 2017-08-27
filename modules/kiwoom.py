@@ -6,7 +6,8 @@ import time
 from PyQt5 import QAxContainer, QtWidgets
 from modules import auto_login, __module
 from manager import chart_manager, contract_manager, strategy_manager
-from constant import constant as const, screen
+from constant import screen
+from constant.constant import *
 from var import *
 from utils.util import *
 
@@ -403,12 +404,12 @@ class Api(__module.ModuleClass):
 
                             chart_data['현재가변동횟수'] = int(chart_data['임시데이터'][0])
                             chart_data['현재캔들'] = {}
-                            chart_data['현재캔들']['현재가'] = float(chart_data['임시데이터'][1])
+                            chart_data['현재캔들'][현재가] = float(chart_data['임시데이터'][1])
                             chart_data['현재캔들']['거래량'] = int(chart_data['임시데이터'][2])
-                            chart_data['현재캔들']['체결시간'] = str(chart_data['임시데이터'][3])
-                            chart_data['현재캔들']['시가'] = float(chart_data['임시데이터'][4])
-                            chart_data['현재캔들']['고가'] = float(chart_data['임시데이터'][5])
-                            chart_data['현재캔들']['저가'] = float(chart_data['임시데이터'][6])
+                            chart_data['현재캔들'][체결시간] = str(chart_data['임시데이터'][3])
+                            chart_data['현재캔들'][시가] = float(chart_data['임시데이터'][4])
+                            chart_data['현재캔들'][고가] = float(chart_data['임시데이터'][5])
+                            chart_data['현재캔들'][저가] = float(chart_data['임시데이터'][6])
                             chart_data['현재캔들']['영업일자'] = str(chart_data['임시데이터'][7])
 
                             chart_data['임시캔들'] = []    # 초기 데이터 수신 중 완성된 캔들을 임시로 저장하고, 수신이 완료된 후 Push
@@ -421,17 +422,17 @@ class Api(__module.ModuleClass):
                             for tick in chart_data['임시틱']:
                                 ''' 첫 번째 데이터 수신 전 해당 차트로부터 들어온 Tick들 처리 '''
                                 if chart_data['현재가변동횟수'] == 0:
-                                    chart_data['현재캔들']['시가'] = tick[0]
+                                    chart_data['현재캔들'][시가] = tick[0]
 
                                 chart_data['현재가변동횟수'] += 1
-                                if tick[0] < chart_data['현재캔들']['저가']:
-                                    chart_data['현재캔들']['저가'] = tick[0]
-                                if tick[0] > chart_data['현재캔들']['고가']:
-                                    chart_data['현재캔들']['고가'] = tick[0]
+                                if tick[0] < chart_data['현재캔들'][저가]:
+                                    chart_data['현재캔들'][저가] = tick[0]
+                                if tick[0] > chart_data['현재캔들'][고가]:
+                                    chart_data['현재캔들'][고가] = tick[0]
 
                                 if chart_data['현재가변동횟수'] == time_unit:
-                                    chart_data['현재캔들']['체결시간'] = tick[1]
-                                    chart_data['현재캔들']['현재가'] = tick[0]
+                                    chart_data['현재캔들'][체결시간] = tick[1]
+                                    chart_data['현재캔들'][현재가] = tick[0]
                                     chart_data['현재가변동횟수'] = 0
                                     if chart_data['인덱스'] == -1:
                                         chart_data['임시캔들'].append(chart_data['현재캔들'])
@@ -450,12 +451,12 @@ class Api(__module.ModuleClass):
 
                             candle = {}
                             while current_idx > 8:
-                                candle['현재가'] = float(chart_data['임시데이터'][current_idx])
+                                candle[현재가] = float(chart_data['임시데이터'][current_idx])
                                 candle['거래량'] = int(chart_data['임시데이터'][current_idx + 1])
-                                candle['체결시간'] = str(chart_data['임시데이터'][current_idx + 2])
-                                candle['시가'] = float(chart_data['임시데이터'][current_idx + 3])
-                                candle['고가'] = float(chart_data['임시데이터'][current_idx + 4])
-                                candle['저가'] = float(chart_data['임시데이터'][current_idx + 5])
+                                candle[체결시간] = str(chart_data['임시데이터'][current_idx + 2])
+                                candle[시가] = float(chart_data['임시데이터'][current_idx + 3])
+                                candle[고가] = float(chart_data['임시데이터'][current_idx + 4])
+                                candle[저가] = float(chart_data['임시데이터'][current_idx + 5])
                                 candle['영업일자'] = str(chart_data['임시데이터'][current_idx + 6])
                                 current_idx -= 7
 
@@ -660,18 +661,18 @@ class Api(__module.ModuleClass):
                         return
 
                     if chart_data['현재가변동횟수'] == 0:
-                        chart_data['현재캔들']['시가'] = current_price
+                        chart_data['현재캔들'][시가] = current_price
 
                     chart_data['현재가변동횟수'] += 1
-                    if current_price < chart_data['현재캔들']['저가']:
-                        chart_data['현재캔들']['저가'] = current_price
+                    if current_price < chart_data['현재캔들'][저가]:
+                        chart_data['현재캔들'][저가] = current_price
 
-                    if current_price > chart_data['현재캔들']['고가']:
-                        chart_data['현재캔들']['고가'] = current_price
+                    if current_price > chart_data['현재캔들'][고가]:
+                        chart_data['현재캔들'][고가] = current_price
 
                     if chart_data['현재가변동횟수'] == int(time_unit):
-                        chart_data['현재캔들']['체결시간'] = current_time
-                        chart_data['현재캔들']['현재가'] = current_price
+                        chart_data['현재캔들'][체결시간] = current_time
+                        chart_data['현재캔들'][현재가] = current_price
                         chart_data['현재가변동횟수'] = 0
                         if chart_data['인덱스'] == -1 and const.MODE == const.REAL:
                             chart_data['임시캔들'].append(chart_data['현재캔들'])
@@ -701,7 +702,7 @@ class Api(__module.ModuleClass):
 
                 if order_contents['신규주문']:
                     self.res.info('신규주문 : %s' % order_contents)
-                    self.res.info("체결시간:%s" % chart_data['체결시간'][-1])
+                    self.res.info("체결시간:%s" % chart_data[체결시간][-1])
                     self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
 
             ''' 전략 선택 '''

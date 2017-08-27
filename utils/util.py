@@ -38,8 +38,8 @@ def get_time(add_min, subject_code):
         time_unit = strategy_var.info[subject_code][ sbv.info[subject_code]['전략'] ][const.차트][0][1]
         chart_data = chart_manager.data[subject_code][chart_type][time_unit]
 
-        current_hour = int(str(chart_data['체결시간'][-1])[8:10])
-        current_min = int(str(chart_data['체결시간'][-1])[10:12]) + add_min
+        current_hour = int(str(chart_data[const.체결시간][-1])[8:10])
+        current_min = int(str(chart_data[const.체결시간][-1])[10:12]) + add_min
         if current_min >= 60:
             current_hour += 1
             current_min -= 60

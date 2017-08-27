@@ -26,29 +26,23 @@ class Tester:
 
     def simulate(self, kw, result):
         record = {}
-        chart_data = kw.chart.data
-        stv_info = kw.stv.info
-        sbv_info = kw.sbv.info
-        subject_list = stv_info.keys()
-        chart_type = {}
-        time_unit = {}
-        for subject_code in subject_list:
-            chart_type[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-            time_unit[subject_code] = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
+        profit = 0
+        for subject_code in ctm.common_data.keys():
+            kiwoom_tester = KiwoomTester(kw.stv)
 
-            print(stv_info)
-            for idx in range(0, chart_data[subject_code][chart_type][time_unit]):
-                candle = {
-                    현재가 :   chart_data[subject_code][chart_type][time_unit][현재가][idx],
-                    고가  :   chart_data[subject_code][chart_type][time_unit][고가][idx],
-                    저가  :   chart_data[subject_code][chart_type][time_unit][저가][idx],
-                    시가  :   chart_data[subject_code][chart_type][time_unit][시가][idx]
-                }
+            stv_info = kw.stv.info
+            sbv_info = kw.sbv.info
+            chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
+            time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
+            for candle in ctm.common_data[subject_code][chart_type][time_unit]:
+                kiwoom_tester.chart.push(subject_code, chart_type, time_unit, candle)
 
-                order_info = kw.check_contract_in_candle(subject_code, candle, idx)
+                order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
 
-                #if order_info[신규매매] is True:
-                #    kw.send_order[order_info]
+                if order_info[신규매매]:
+                    kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
+
+            profit = profit + kiwoom_tester.누적수익
 
         record['전략변수'] = kw.stv
         record['누적수익'] = kw.누적수익
@@ -61,25 +55,25 @@ class Tester:
         subject_symbol = ''
         start_date = ''
         end_date = ''
-        log.info('종목코드를 입력하세요. [ ex) GC ]')
+        self.log.info('종목코드를 입력하세요. [ ex) GC ]')
         subject_symbol = input()
 
         if subject_symbol not in self.sbv.info:
-            log.info('잘못된 종목코드입니다.')
+            self.log.info('잘못된 종목코드입니다.')
             self.proc()
             return
 
-        log.info('시작일을 입력하세요.')
+        self.log.info('시작일을 입력하세요.')
         start_date = input()
         if len(start_date) != 8:
-            log.info('잘못된 시작일입니다.')
+            self.log.info('잘못된 시작일입니다.')
             self.proc()
             return
 
-        log.info('종료일을 입력하세요.')
+        self.log.info('종료일을 입력하세요.')
         end_date = input()
         if len(end_date) != 8:
-            log.info('잘못된 종료일입니다.')
+            self.log.info('잘못된 종료일입니다.')
             self.proc()
             return
 
@@ -103,12 +97,12 @@ class Tester:
             data = {}
             for subject_code in subject_codes:
                 data[subject_code] = []
-                log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
+                self.log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
                 for table_name in table_list[subject_code]:
                     data[subject_code].append(dbm.get_table(table_name))
 
             while True:
-                log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
+                self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                 # data[subject_code] -> ctm.common_data에 setting
                 # tester_var.cfg에서 subject_symbol에 맞는 chart_type, time_unit을 가져와서 계산한다.
 
@@ -116,13 +110,13 @@ class Tester:
                 self.result['종료일'] = end_date
                 self.result['종목코드'] = subject_symbol
 
-                log.info("총 테스트 횟수를 계산합니다.")
+                self.log.info("총 테스트 횟수를 계산합니다.")
                 total_count = 1
                 stv_table, cur_table = self.create_simulater_var_table()  # 총 테스트 횟수 계산
                 for cnt in stv_table:
                     total_count * (cnt+1)
 
-                log.info("총 %s번의 테스트." % total_count)
+                self.log.info("총 %s번의 테스트." % total_count)
 
                 label = subprocess.check_output(["git", "describe", "--always"]) # current git hash
                 procs = []
@@ -141,30 +135,30 @@ class Tester:
                 for process in procs:
                     process.join()
 
-                log.info("[테스트 결과]")
+                self.log.info("[테스트 결과]")
 
                 ''' 이 부분에 result를 수익별로 sorting '''
 
                 ''' 상위 N개의 결과 보여 줌 '''
                 for i in range(0, 10):
-                    log.info(self.result[i]) # 더 디테일하게 변경
+                    self.log.info(self.result[i]) # 더 디테일하게 변경
 
-                log.info("해당 코드의 Git Hash : %s" % label)
+                self.log.info("해당 코드의 Git Hash : %s" % label)
                 while True:
-                    log.info("Database에 넣을 결과 Index를 입력해주세요.(종료 : -1)")
+                    self.log.info("Database에 넣을 결과 Index를 입력해주세요.(종료 : -1)")
                     idx = input()
                     if idx == -1: break
-                    log.info("저장하신 결과에 대한 코드를 나중에 확인하시기 위해선, 코드를 변경하시기 전에 Commit을 해야 합니다.")
+                    self.log.info("저장하신 결과에 대한 코드를 나중에 확인하시기 위해선, 코드를 변경하시기 전에 Commit을 해야 합니다.")
 
                     ''' 해당 index의 결과를 stv를 정렬해서, 결과 DB에 저장. '''
 
-                log.info("Config를 변경하여 계속 테스트 하시려면 아무키나 눌러주세요.(종료 : exit)")
+                self.log.info("Config를 변경하여 계속 테스트 하시려면 아무키나 눌러주세요.(종료 : exit)")
                 cmd = input()
                 if cmd == 'exit': break
-            log.info('테스트 종료.')
+            self.log.info('테스트 종료.')
 
         except Exception as err:
-            err_log.error(get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
 
 
     def parse_tick(tick):
@@ -249,7 +243,7 @@ class Tester:
 
             return stv
         except Exception as err:
-            err_log.error(get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
 
 
     def create_simulater_var_table(self):
@@ -300,7 +294,7 @@ class Tester:
 
             return max_array, cur_array
         except Exception as err:
-            err_log.error(get_error_msg(err))
+            self.err_log.error(get_error_msg(err))
             return None, None
 
     def set_simulate_config(self, subject_code):
@@ -347,4 +341,4 @@ class Tester:
 
 
         except Exception as err:
-            err_log.error(get_error_msg(err))
+            self.err_log.error(get_error_msg(err))

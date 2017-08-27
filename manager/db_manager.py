@@ -82,7 +82,7 @@ class DBManager(__manager.ManagerClass):
              , t3.price as close
           from (
                 select Floor((result.row-1) / '%s') + 1 as id
-                     , min(date_format(result.date, '%%Y-%%m-%%d %%H:%%i:%%s')) as date
+                     , min(date_format(result.date, '%%Y%%m%%d%%H%%i%%s')) as date
                      , max(result.id) as max_id
                      , min(result.id) as min_id
                      , max(result.price) as high
