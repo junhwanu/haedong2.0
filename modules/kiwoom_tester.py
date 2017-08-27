@@ -2,7 +2,7 @@
 
 from manager import chart_manager as ctm, strategy_manager as stm
 from modules import __module
-
+from var import subject
 
 class KiwoomTester(__module.ModuleClass):
     chart = None
@@ -13,6 +13,7 @@ class KiwoomTester(__module.ModuleClass):
         super(KiwoomTester, self).__init__()
         self.stv = _stv
         self.chart = ctm.Chart_Manger(self.stv)
+        self.stm = stm.StrategyManager(subject.Subject())
 
     def get_name(self):
         return str(self.__class__.__name__)
