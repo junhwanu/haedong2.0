@@ -3,22 +3,15 @@ import sys
 import threading
 import time
 
-from PyQt5.QAxContainer import *
-from PyQt5.QtWidgets import *
-
-import auto_login
-import constant as const
-import screen
-from subject import Subject
-import strategy_var as st
-import chart_manager as ctm
-import contract_manager as cm
-import strategy_manager as stm
-from util import *
-from __module import ModuleClass
+from PyQt5 import QAxContainer, QtWidgets
+from modules import auto_login, __module
+from manager import chart_manager, contract_manager, strategy_manager
+from constant import constant as const, screen
+from var import *
+from utils.util import *
 
 
-class Api(ModuleClass):
+class Api(__module.ModuleClass):
     req = []
     input_value = []
     last_req_time = time.time()
@@ -39,18 +32,18 @@ class Api(ModuleClass):
     def __init__(self, _stv=None):
         super(Api, self).__init__()
 
-        self.subject_var = Subject()
+        self.subject_var = subject.Subject()
 
         # Headong Manager Set-up
-        self.contract_manager = cm.ContractManager()
-        self.chart_manager = ctm.ChartManger(_stv, self.subject_var)
-        self.strategy_manager = stm.StrategyManager(self.subject_var)
+        self.contract_manager = contract_manager.ContractManager()
+        self.chart_manager = chart_manager.ChartManger(_stv, self.subject_var)
+        self.strategy_manager = strategy_manager.StrategyManager(self.subject_var)
 
         if const.MODE is const.REAL:
             # Kiwoom set-up
             self.log.info("해동이2.0 실제투자 시작 합니다.")
-            self.app = QApplication(sys.argv)
-            self.ocx = QAxWidget("KFOPENAPI.KFOpenAPICtrl.1")
+            self.app = QtWidgets.QApplication(sys.argv)
+            self.ocx = QAxContainer.QAxWidget("KFOPENAPI.KFOpenAPICtrl.1")
             self.ocx.OnEventConnect[int].connect(self.OnEventConnect)
             self.ocx.OnReceiveTrData[str, str, str, str, str].connect(self.OnReceiveTrData)
             self.ocx.OnReceiveChejanData[str, int, str].connect(self.OnReceiveChejanData)
@@ -297,7 +290,7 @@ class Api(ModuleClass):
 
     def quit(self):
         """ Quit the server """
-        QApplication.quit()
+        QtWidgets.QApplication.quit()
         sys.exit()
 
     '''

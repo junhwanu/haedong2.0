@@ -1,6 +1,6 @@
 import abc
 import inspect
-from log_manager import LogManager
+from manager import log_manager
 
 
 class BaseStrategy(metaclass=abc.ABCMeta):
@@ -115,4 +115,4 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #     pass
 
     def init_logger(self):
-        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()

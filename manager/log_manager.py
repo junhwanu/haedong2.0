@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
-import shutil, time, sys, os
-import constant as const
+import shutil
+import time
+import sys
+import os
 import logging
-import singleton
+from constant import constant as const
+from utils import util, singleton
+
 
 # Singleton class --> there is only one log manager
 

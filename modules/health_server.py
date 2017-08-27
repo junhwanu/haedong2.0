@@ -5,7 +5,7 @@ import socketserver
 import threading
 import time
 import sys
-from __module import ModuleClass
+from modules import __module
 
 HEALTH_PORT = 56789
 BUFF_SIZE = 1024
@@ -25,7 +25,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
         sock.close()
 
 
-class HealthConnectManager(ModuleClass, threading.Thread):
+class HealthConnectManager(__module.ModuleClass, threading.Thread):
 
     def __init__(self):
         super(HealthConnectManager, self).__init__()

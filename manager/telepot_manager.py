@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import telepot
-from __manager import ManagerClass
-import singleton
+from utils import singleton
 
 # Singleton class --> there is only one log manager
 

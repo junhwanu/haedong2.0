@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
-import subject
 import time
-import strategy_var as st
-import kiwoom
-import constant as const
-from db_manager import *
-import chart_manager as chart
 import configparser
 import json
-from strategy_var import Strategy_Var
-from multiprocessing import Process, Queue
-from kiwoom_tester import *
-from util import *
 import subprocess
-from log_manager import LogManager
+import var.subject as subject
+import var.strategy_var as strategy_var
+import manager.chart_manager as chart
+from multiprocessing import Process, Queue
+from utils.util import *
+from constant.constant import *
+from modules.kiwoom_tester import *
+from manager.db_manager import *
+from manager.log_manager import LogManager
 
 
 class Tester:
@@ -97,7 +95,7 @@ class Tester:
                     table_list[subject_code] = []
                     subject_codes.append(subject_code)
                     self.sbv.info[subject_code] = self.sbv.info[subject_symbol]   # 종목정보 복사
-                    st.info[subject_code] = st.info[subject_symbol] # 전략변수 복사
+                    strategy_var.info[subject_code] = strategy_var.info[subject_symbol] # 전략변수 복사
 
                 table_list[subject_code].append(table_name)
 
@@ -166,7 +164,7 @@ class Tester:
             log.info('테스트 종료.')
 
         except Exception as err:
-            err_log.error(log_manager.get_error_msg(err))
+            err_log.error(get_error_msg(err))
 
 
     def parse_tick(tick):
@@ -201,7 +199,7 @@ class Tester:
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
             config.read(CONFIG_PATH + '/tester_var.cfg')
-            stv = Strategy_Var()
+            stv = strategy_var()
 
             for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
@@ -251,7 +249,7 @@ class Tester:
 
             return stv
         except Exception as err:
-            err_log.error(log_manager.get_error_msg(err))
+            err_log.error(get_error_msg(err))
 
 
     def create_simulater_var_table(self):
@@ -302,7 +300,7 @@ class Tester:
 
             return max_array, cur_array
         except Exception as err:
-            err_log.error(log_manager.get_error_msg(err))
+            err_log.error(get_error_msg(err))
             return None, None
 
     def set_simulate_config(self, subject_code):
@@ -312,7 +310,7 @@ class Tester:
             config = configparser.RawConfigParser()
             config.read(CONFIG_PATH + '/tester_var.cfg')
 
-            stv = Strategy_Var()
+            stv = strategy_var()
             for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
