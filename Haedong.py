@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, time, threading
-from modules import kiwoom, health_server, kiwoom_exception
+from modules import kiwoom, health_server
 from manager import log_manager
 from constant import constant_ as const
 from simulate import tester

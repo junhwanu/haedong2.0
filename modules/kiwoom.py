@@ -4,7 +4,7 @@ import threading
 import time
 
 from PyQt5 import QAxContainer, QtWidgets
-from modules import auto_login, __module, kiwoom_exception
+from modules import auto_login, __module
 from manager import chart_manager, contract_manager, strategy_manager
 from constant import screen
 from constant.constant_ import *
@@ -291,8 +291,11 @@ class Api(__module.ModuleClass):
 
     def quit(self, str):
         """ Quit the server """
+        print("QtWidgets.QApplication.quit()")
+        QtWidgets.QApplication.quit()
+        print("QtWidgets.QApplication.quit()")
         self.err_log.error(str)
-        self.app.quit()
+#         self.app.quit()
 
     '''
     Control Event Handlers

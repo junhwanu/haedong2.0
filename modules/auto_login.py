@@ -88,25 +88,26 @@ class Login(__module.ModuleClass, threading.Thread):
 
         try:
             account_input = dlg.Edit1
-#             account_input.SetFocus()
+            time.sleep(.5)
             account_input.TypeKeys(self.USER_ID)
-            time.sleep(0.5)
+            time.sleep(.5)
             self.log.info("키움 사용자 ID(" + str(self.USER_ID) + ")")
             
             passwd_input = dlg.Edit2
-#             passwd_input.SetFocus()
+            time.sleep(.5)
             passwd_input.TypeKeys(self.USER_PASSWD)
-            time.sleep(0.5)
+            time.sleep(.5)
             self.log.info("키움 사용자 PASSWORD(" + str(self.USER_PASSWD) + ")")
 
             # 모의투자
             if self.REAL_INVEST:
                 auth_input = dlg.Edit3
-#                 auth_input.SetFocus()
+                time.sleep(.5)
                 auth_input.TypeKeys(self.AUTH_PASSWD)
+                time.sleep(.5)
                 self.log.info("공인인증서 PASSWORD(" + str(self.AUTH_PASSWD) + ")")
 
-            time.sleep(2)
+            time.sleep(1)
             login_button = dlg.Button0
             login_button.Click()
 
@@ -170,19 +171,18 @@ class Login(__module.ModuleClass, threading.Thread):
                 try:
                     dlg.Edit1.SetFocus()
                     break
-                except pywinauto.findwindows.ElementNotFoundError as err:
+                except pywinauto.findwindows.ElementNotFoundError:
                     self.log.info(str(proc) + "에서 윈도우를 찾지 못했습니다.")
                     dlg = None
 
         try:
             passwd_mod = dlg.Edit1
-#             passwd_mod.SetFocus()
             passwd_mod.Click()
+            time.sleep(.5)
             passwd_mod.TypeKeys(self.ACCOUNT_PASSWD)
-            # self.log.info(self.ACCOUNT_PASSWD)
+            time.sleep(.5)
             
             time.sleep(1)
-
             save_button = dlg.Button3
             save_button.Click()
 
