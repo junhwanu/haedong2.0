@@ -8,7 +8,7 @@ import var.strategy_var as strategy_var
 import manager.chart_manager as chart
 from multiprocessing import Process, Queue
 from utils.util import *
-from constant.constant import *
+from constant.constant_ import *
 from modules.kiwoom_tester import *
 from manager.db_manager import *
 from manager.log_manager import LogManager

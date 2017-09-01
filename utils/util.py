@@ -3,7 +3,7 @@ import sys
 import os
 import datetime
 import time
-from constant import constant as const
+from constant import constant_ as const
 from manager import chart_manager
 from var import strategy_var, subject
 

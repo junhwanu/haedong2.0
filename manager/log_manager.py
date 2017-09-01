@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import shutil
 import time
-import sys
 import os
 import logging
-from constant import constant as const
-from utils import util, singleton
+from constant import constant_ as const
+from utils import singleton
+from numpy.distutils.fcompiler import __metaclass__
 
 
 # Singleton class --> there is only one log manager
@@ -25,7 +24,7 @@ class LogManager(metaclass=singleton.SingletonInstane):
         res_file = path + "/" + today + "_result.txt"
         all_file = path + "/" + today + "_all.txt"
         info_file = path + "/" + today + "_info.txt"
-        err_file = path + "/" + today + "_error.txt"
+#         err_file = path + "/" + today + "_error.txt"
 
         if not os.path.exists(path):
             os.makedirs(path)

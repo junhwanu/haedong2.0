@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from var import subject
 from strategy import para
-from constant.constant import *
+from constant.constant_ import *
 from utils.util import *
 from manager import __manager
 

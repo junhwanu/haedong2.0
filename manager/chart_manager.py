@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import time
 from manager import __manager
-from constant.constant import *
+from constant.constant_ import *
 from utils import util
 from var import subject, strategy_var as st
 

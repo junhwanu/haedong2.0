@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, time, threading
-from modules import kiwoom, health_server
+from modules import kiwoom, health_server, kiwoom_exception
 from manager import log_manager
-from constant import constant as const
+from constant import constant_ as const
 from simulate import tester
 
 # import simulate.tester as tester
-# import constant.constant as const
+# import constant.constant_ as const
 # import modules.kiwoom as kiwoom
 # import modules.health_server as health_server
 
@@ -38,12 +38,17 @@ class Haedong:
                 # health server run
                 health_server_thread = health_server.HealthConnectManager()
                 health_server_thread.start()
-                kw_api = kiwoom.Api()
-
-                health_server_thread.close()
-                health_server_thread.join(5)
-                print("헬스 체크서버 종료")
-
+                
+#                 try:
+                kiwoom.Api()
+                print("haedong!!")
+            
+#                 except kiwoom_exception as err:
+                health_server_thread.server_close()
+                health_server_thread.join(timeout=5)
+                self.log.info("헬스 체크서버 종료")
+                
+#                 finally:
                 break
 
             elif const.MODE is const.TEST:
@@ -53,6 +58,9 @@ class Haedong:
 
             print("다시 입력해주세요.")
 
+        print("3초 후 프로그램이 종료됩니다.")
+        time.sleep(3)
+        sys.exit()
         '''
         self.running_time = time.time() - s_time
 

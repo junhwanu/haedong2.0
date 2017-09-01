@@ -2,7 +2,7 @@
 import time
 from manager import contract_manager as cm, chart_manager as chart
 from strategy import __base_strategy
-from constant.constant import *
+from constant.constant_ import *
 from utils import util
 
 

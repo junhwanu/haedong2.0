@@ -4,7 +4,7 @@ from manager import chart_manager as ctm, strategy_manager as stm
 from modules import __module
 from var import subject
 from manager import chart_manager, contract_manager, strategy_manager
-from constant.constant import *
+from constant.constant_ import *
 
 class KiwoomTester(__module.ModuleClass):
     chart = None

@@ -4,10 +4,10 @@ import threading
 import time
 
 from PyQt5 import QAxContainer, QtWidgets
-from modules import auto_login, __module
+from modules import auto_login, __module, kiwoom_exception
 from manager import chart_manager, contract_manager, strategy_manager
 from constant import screen
-from constant.constant import *
+from constant.constant_ import *
 from var import *
 from utils.util import *
 
@@ -289,10 +289,10 @@ class Api(__module.ModuleClass):
         except Exception as err:
             self.log.error(get_error_msg(err))
 
-    def quit(self):
+    def quit(self, str):
         """ Quit the server """
-        QtWidgets.QApplication.quit()
-        sys.exit()
+        self.err_log.error(str)
+        self.app.quit()
 
     '''
     Control Event Handlers
@@ -330,12 +330,16 @@ class Api(__module.ModuleClass):
             # const.MODE = const.DB_INSERT
             # DB INSERT CODE
             pass
+        
+        elif nErrCode == -106:
+            # Kiwoom API 종료 상태
+            result = str('Kiwoom API 종료 상태[%s]' % parse_error_code(nErrCode))
+            self.quit(result)
 
         else:
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            self.err_log.error('로그인 실패[%s]' % parse_error_code(nErrCode))
-
-            self.quit()
+            result = str('ERROR 상태 체크 요함[%s]' % parse_error_code(nErrCode))
+            self.quit(result)
 
     def OnReceiveTrData(self, sScrNo, sRQName, sTrCode, sRecordName, sPreNext, candle=None):
         """
