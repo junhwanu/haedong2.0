@@ -5,6 +5,8 @@ import threading
 import time
 
 import pywinauto
+from comtypes._comobject import catch_errors
+from pywinauto.findwindows import ElementNotFoundError
 
 
 class ClosePopup(threading.Thread):
@@ -18,7 +20,12 @@ class ClosePopup(threading.Thread):
     
     def run(self):
         time.sleep(self.time)
-        app = pywinauto.Application().connect(process=os.getpid())
-        dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title="OpenAPI-W"))
-        dlg.Button0.click()
+        try:
+            app = pywinauto.Application().connect(process=os.getpid())
+            dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title="OpenAPI-W"))
+            dlg.Button0.click()
+            
+        except ElementNotFoundError:
+            return
+        
         return
