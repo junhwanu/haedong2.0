@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import sys, os, time, threading
-from modules import kiwoom, health_server
+from modules import kiwoom, health_server, destroy_python
 from manager import log_manager
 from constant import constant_ as const
 from simulate import tester
@@ -16,7 +16,7 @@ from simulate import tester
 # import chart_manager as chart
 
 
-class Haedong:
+class Haedong(object):
     running_time = 0
     log, res, err_log = None, None, None
 
@@ -35,6 +35,9 @@ class Haedong:
                 const.MODE = int(sys.argv[1])
 
             if const.MODE is const.REAL:
+                #파이썬 프로그램 종료 기능
+                destroy_python.Destroy_python()
+                
                 # health server run
                 health_server_thread = health_server.HealthConnectManager()
                 health_server_thread.start()
