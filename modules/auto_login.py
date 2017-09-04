@@ -78,7 +78,6 @@ class Login(__module.ModuleClass, threading.Thread):
                 self.log.info("로그인 프로그램(" + str(proc) + ")")
                 app = pywinauto.Application().connect(process=login_pid)
                 dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title="영웅문W Login"))
-
                 try:
                     dlg.Edit1.SetFocus()
                     break
@@ -87,29 +86,21 @@ class Login(__module.ModuleClass, threading.Thread):
                     dlg = None
 
         try:
-            account_input = dlg.Edit1
-            time.sleep(.5)
-            account_input.TypeKeys(self.USER_ID)
-            time.sleep(.5)
+            dlg.Edit1.set_focus()
+            dlg.Edit1.send_keystrokes(self.USER_ID)
             self.log.info("키움 사용자 ID(" + str(self.USER_ID) + ")")
             
-            passwd_input = dlg.Edit2
-            time.sleep(.5)
-            passwd_input.TypeKeys(self.USER_PASSWD)
-            time.sleep(.5)
+            dlg.Edit2.set_focus()
+            dlg.Edit2.send_keystrokes(self.USER_PASSWD)
             self.log.info("키움 사용자 PASSWORD(" + str(self.USER_PASSWD) + ")")
-
+            
             # 모의투자
             if self.REAL_INVEST:
-                auth_input = dlg.Edit3
-                time.sleep(.5)
-                auth_input.TypeKeys(self.AUTH_PASSWD)
-                time.sleep(.5)
+                dlg.Edit3.send_keystrokes(self.AUTH_PASSWD)
                 self.log.info("공인인증서 PASSWORD(" + str(self.AUTH_PASSWD) + ")")
 
             time.sleep(1)
-            login_button = dlg.Button0
-            login_button.Click()
+            dlg.Button0.Click()
 
         except pywinauto.findwindows.ElementNotFoundError:
             self.log.info("로그인 윈도우를 찾지 못했습니다")
@@ -128,7 +119,8 @@ class Login(__module.ModuleClass, threading.Thread):
                 self.log.info("더미 아이콘 제거." + str(icon_position))
                 x, y = icon_position
                 pyautogui.moveTo(x, y)
-
+                time.sleep(0.5)
+                
             else:
                 break
 
@@ -142,52 +134,32 @@ class Login(__module.ModuleClass, threading.Thread):
         while True:
             self.log.info("트레이 아이콘을 찾는 중입니다.")
             icon_position = pyautogui.locateCenterOnScreen(icon, region=(x - 400, y - 100, 400, 100), confidence=.5)
-
+            time.sleep(2)
+            
             if icon_position:
                 self.log.info("트레이 아이콘을 찾았습니다." + str(icon_position))
                 x, y = icon_position
-                pyautogui.click(x, y, button='right')
                 break
-
-            time.sleep(2)
-
+            
         # 등록 버튼 누르기
+        pyautogui.click(x, y, button='right')
         time.sleep(.1)
-        self.log.info("등록버튼 누르기")
-        pyautogui.moveRel(10, -35)
-        pyautogui.click()
+        pyautogui.click(x+10, y-35, button='left')
+        self.log.info("등록버튼 누르기 완료")
 
         time.sleep(1)
         
-        dlg = None
-
-        for proc in psutil.process_iter():
-            if proc.name() in ["python.exe"]:
-                kfopcom_pid = proc.pid
-                self.log.info("거래 프로그램(" + str(proc) + ")")
-                app = pywinauto.Application().connect(process=kfopcom_pid)
-                dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title="계좌번호관리"))
-
-                try:
-                    dlg.Edit1.SetFocus()
-                    break
-                except pywinauto.findwindows.ElementNotFoundError:
-                    self.log.info(str(proc) + "에서 윈도우를 찾지 못했습니다.")
-                    dlg = None
-
+        app = pywinauto.Application().connect(process=os.getpid())
+        dlg = pywinauto.timings.WaitUntilPasses(20, 0.5, lambda: app.window_(title="계좌번호관리"))
+        
         try:
-            passwd_mod = dlg.Edit1
-            passwd_mod.Click()
+            dlg.Edit1.Click()
             time.sleep(.5)
-            passwd_mod.TypeKeys(self.ACCOUNT_PASSWD)
+            dlg.Edit1.send_keystrokes(self.ACCOUNT_PASSWD)
             time.sleep(.5)
-            
-            time.sleep(1)
-            save_button = dlg.Button3
-            save_button.Click()
-
-            close_button = dlg.Button2
-            close_button.Click()
+            dlg.Button3.Click()
+            time.sleep(.5)
+            dlg.Button2.Click()
 
         except pywinauto.findwindows.ElementNotFoundError:
             self.log.info("거래 비밀번호 윈도우를 찾지 못했습니다")
@@ -200,6 +172,10 @@ class Login(__module.ModuleClass, threading.Thread):
         return True
 
     def run(self):
+        self.log.info("자동 비밀번호 입력 사용합니다.")
+        self.log.info("더미 아이콘을 제거합니다.")
+        self.remove_dummy_icon()
+        
         if self.AUTO_LOGIN is False:
             self.log.info("자동 로그인을 사용하지 않습니다.")
             return
@@ -219,9 +195,6 @@ class Login(__module.ModuleClass, threading.Thread):
             self.log.info("자동 비밀번호 입력을 사용하지 않습니다.")
             return
 
-        self.log.info("자동 비밀번호 입력 사용합니다.")
-        self.log.info("더미 아이콘을 제거합니다.")
-        self.remove_dummy_icon()
         time.sleep(5)
 
         while self.auto_write_passwd() is False:
@@ -231,12 +204,14 @@ class Login(__module.ModuleClass, threading.Thread):
 
         self.log.info("비밀번호 입력 화면 정상 처리!")
         self.log.info("Auto Login 정상 종료")
-
+        return
+    
     def get_name(self):
         return str(self.__class__.__name__)
 
     def print_status(self):
         self.log.info(self.__getattribute__())
+        
 
 if __name__ == '__main__':
     login = Login()

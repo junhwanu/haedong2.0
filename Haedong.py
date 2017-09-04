@@ -39,16 +39,12 @@ class Haedong:
                 health_server_thread = health_server.HealthConnectManager()
                 health_server_thread.start()
                 
-#                 try:
                 kiwoom.Api()
-                print("haedong!!")
             
-#                 except kiwoom_exception as err:
                 health_server_thread.server_close()
                 health_server_thread.join(timeout=5)
                 self.log.info("헬스 체크서버 종료")
                 
-#                 finally:
                 break
 
             elif const.MODE is const.TEST:
@@ -58,9 +54,9 @@ class Haedong:
 
             print("다시 입력해주세요.")
 
-        print("3초 후 프로그램이 종료됩니다.")
-        time.sleep(3)
+        self.log.info("Haedong 프로그램이 종료됩니다.")
         sys.exit()
+        
         '''
         self.running_time = time.time() - s_time
 

@@ -58,9 +58,8 @@ class HealthConnectManager(__module.ModuleClass, threading.Thread):
         self.log.info(self.__getattribute__())
         
     def server_close(self):
-        self.log.info("before shutdown")
-        self.server.shutdown()
-        self.log.info("after shutdown")
+        if self.server is not None:
+            self.server.shutdown()
 
 
 if __name__ == '__main__':

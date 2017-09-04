@@ -4,7 +4,7 @@ import threading
 import time
 
 from PyQt5 import QAxContainer, QtWidgets
-from modules import auto_login, __module
+from modules import auto_login, __module, close_popup
 from manager import chart_manager, contract_manager, strategy_manager
 from constant import screen
 from constant.constant_ import *
@@ -29,7 +29,7 @@ class Api(__module.ModuleClass):
     contract_manager = None
     chart_manager = None
     strategy_manager = None
-
+    
     def __init__(self, _stv=None):
         super(Api, self).__init__()
 
@@ -63,6 +63,8 @@ class Api(__module.ModuleClass):
         else:
             self.log.debug("MODE:"+str(const.MODE))
 
+        self.log.info("Headong API 종료")
+            
     '''
     Interface Methods
     '''
@@ -81,8 +83,7 @@ class Api(__module.ModuleClass):
                 self.log.debug("연결 성공")
 
                 # auto login
-                lg = auto_login.Login()
-                lg.start()
+                auto_login.Login().start()
 
             else:
                 self.log.debug("연결 실패")
@@ -289,13 +290,25 @@ class Api(__module.ModuleClass):
         except Exception as err:
             self.log.error(get_error_msg(err))
 
-    def quit(self, str):
+    def quit(self, nErrCode):
         """ Quit the server """
-        print("QtWidgets.QApplication.quit()")
-        QtWidgets.QApplication.quit()
-        print("QtWidgets.QApplication.quit()")
-        self.err_log.error(str)
-#         self.app.quit()
+        result = None
+        if nErrCode == 0:
+            result = str('Kiwoom API 종료 상태[%s]' % parse_error_code(nErrCode))
+            self.log.info(result)
+             
+        elif nErrCode == -106:
+            result = str('Kiwoom API 종료 상태[%s]' % parse_error_code(nErrCode))
+            
+            # 팝업 종료 필요
+            self.err_log.error(result)
+            self.app.quit()
+            self.log.info("4초 후 팝업 종료")
+            close_popup.ClosePopup(4).start()
+            
+        else:
+            result = str('에러 상태 체크 필요[%s]' % parse_error_code(nErrCode))
+            self.err_log.error(result)
 
     '''
     Control Event Handlers
@@ -332,17 +345,15 @@ class Api(__module.ModuleClass):
             # time.sleep(wait_time)
             # const.MODE = const.DB_INSERT
             # DB INSERT CODE
-            pass
+            self.quit(nErrCode)
         
         elif nErrCode == -106:
             # Kiwoom API 종료 상태
-            result = str('Kiwoom API 종료 상태[%s]' % parse_error_code(nErrCode))
-            self.quit(result)
+            self.quit(nErrCode)
 
         else:
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            result = str('ERROR 상태 체크 요함[%s]' % parse_error_code(nErrCode))
-            self.quit(result)
+            self.quit(nErrCode)
 
     def OnReceiveTrData(self, sScrNo, sRQName, sTrCode, sRecordName, sPreNext, candle=None):
         """
