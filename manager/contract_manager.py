@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
-from var import subject
-from strategy import para
 from constant.constant_ import *
+from strategy import para
 from utils.util import *
-from manager import __manager
+from var import subject
+from manager.__manager import ManagerClass
+
 
 SAFE = '목표달성청산'
 DRIBBLE = '드리블'
 ALL = '전체'
 
 
-class ContractManager(__manager.ManagerClass):
+class ContractManager(ManagerClass):
     contract_list = {}
 
     '''
@@ -138,6 +139,7 @@ class ContractManager(__manager.ManagerClass):
         except Exception as err:
             self.err_log.error(get_error_msg(err))
 
+    @staticmethod
     def get_contract_count(self, subject_code):
         try:
             if subject_code not in self.contract_list:

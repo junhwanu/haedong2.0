@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from manager import chart_manager as ctm, strategy_manager as stm
-from modules import __module
 from var import subject
-from manager import chart_manager, contract_manager, strategy_manager
 from constant.constant_ import *
+from modules.__module import ModuleClass
 
-class KiwoomTester(__module.ModuleClass):
+class KiwoomTester(ModuleClass):
     chart = None
     stv = None
     누적수익 = 0
@@ -51,7 +50,7 @@ class KiwoomTester(__module.ModuleClass):
         자릿수 = self.subject_var.info[종목코드]['자릿수'] # 금의 경우 1
         단위 = self.subject_var.info[종목코드]['단위']     # 금의 경우 0.1
 
-        if contract_manager.get_contract_count(종목코드) > 0: #계약을 가지고 있을때
+        if ctm().get_contract_count(종목코드) > 0: #계약을 가지고 있을때
             if 플로우 == 상향:
                 if 차트[저가] < sar: # 하향 반전 됨
                     return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수))

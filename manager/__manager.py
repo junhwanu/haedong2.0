@@ -1,6 +1,9 @@
+# -*- coding: utf-8 -*-
+
 import abc
 import inspect
-from manager import log_manager
+
+from manager.log_manager import LogManager
 
 
 class ManagerClass(metaclass=abc.ABCMeta):
@@ -19,4 +22,4 @@ class ManagerClass(metaclass=abc.ABCMeta):
         raise NotImplementedError(inspect.stack()[0][3] + ' is not impplemented.')
 
     def init_logger(self):
-        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager().get_logger()

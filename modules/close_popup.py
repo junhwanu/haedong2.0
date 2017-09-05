@@ -5,11 +5,11 @@ import threading
 import time
 
 import pywinauto
-from comtypes._comobject import catch_errors
 from pywinauto.findwindows import ElementNotFoundError
+from manager.__manager import ManagerClass
 
 
-class ClosePopup(threading.Thread):
+class ClosePopup(ManagerClass, threading.Thread):
     time = 0
     
     def __init__(self, time__):
@@ -29,3 +29,9 @@ class ClosePopup(threading.Thread):
             return
         
         return
+
+    def get_name(self):
+        return str(self.__class__.__name__)
+
+    def print_status(self):
+        self.log.info(self.__getattribute__())

@@ -21,7 +21,7 @@ class Tester:
     log, res, err_log = None, None, None
 
     def __init__(self):
-        self.log, self.res, self.err_log = LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager().get_logger()
         self.sbv = subject.Subject()
 
     def simulate(self, kw, result):
@@ -161,10 +161,10 @@ class Tester:
             self.err_log.error(get_error_msg(err))
 
 
-    def parse_tick(tick):
+    def parse_tick(self, tick):
         return tick[0], tick[1], tick[2]
 
-    def increase_the_number_of_digits(max_array, cur_array):
+    def increase_the_number_of_digits(self, max_array, cur_array):
         cur_array[-1] += 1
         for i in range(len(cur_array)-1 , -1, -1):
             if cur_array[i] > max_array[i]:
@@ -175,7 +175,7 @@ class Tester:
             else: break
         return True
 
-    def calc_divide_count(start, end, interval):
+    def calc_divide_count(self, start, end, interval):
         ''' [10, 40, 5] 일 경우 6을 return 해주는 코드, [0, 0, 0]이면 1이아니라 0을 리턴한다.
             테스트 stv의 max_array를 만들기 위해 사용 됨 '''
         if start == end: return 0

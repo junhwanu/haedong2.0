@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+import configparser
+import os
+
 import psutil
 import pywinauto
-import os
-import configparser
-from modules import __module
+
+from modules.__module import ModuleClass
 
 
-class Destroy_python(__module.ModuleClass):
+class Destroy_python(ModuleClass):
     my_pid = 0
     
     MODULE_PATH = os.path.dirname(os.path.abspath(__file__).replace('\\', '/'))

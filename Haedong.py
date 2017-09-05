@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import sys, os, time, threading
+import sys, time
 from modules import kiwoom, health_server, destroy_python
-from manager import log_manager
 from constant import constant_ as const
 from simulate import tester
+from manager.log_manager import LogManager
 
 # import simulate.tester as tester
 # import constant.constant_ as const
@@ -22,7 +22,7 @@ class Haedong(object):
 
     def __init__(self):
         super(Haedong, self).__init__()
-        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager().get_logger()
 
     def run(self):
         s_time = time.time()

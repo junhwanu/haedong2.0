@@ -1,21 +1,19 @@
 # -*- coding: utf-8 -*-
-import time
-import os
+
 import logging
+import os
+import time
+
 from constant import constant_ as const
-from utils import singleton
-from numpy.distutils.fcompiler import __metaclass__
+from utils.singleton import Singleton
 
 
 # Singleton class --> there is only one log manager
 
-
-class LogManager(metaclass=singleton.SingletonInstane):
+class LogManager(metaclass=Singleton):
     res_logger, info_logger, err_logger = None, None, None
-
+    
     def __init__(self):
-        super(LogManager, self).__init__()
-
         path = const.MAIN_DIR
         path = path + '/logs/'
         now = time.localtime()
@@ -61,7 +59,6 @@ class LogManager(metaclass=singleton.SingletonInstane):
         self.info_logger.setLevel(logging.DEBUG)
         # self.info_logger.setLevel(logging.INFO)
         self.res_logger.setLevel(logging.INFO)
-
         print("Initialize Log Manager")
 
     def get_logger(self):

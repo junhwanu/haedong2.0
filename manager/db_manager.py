@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import pymysql
+
 from constant.constant_ import *
-from manager import __manager
+from manager.__manager import ManagerClass
 
 
-class DBManager(__manager.ManagerClass):
+class DBManager(ManagerClass):
     curs = None
     conn = None
     is_connected = False

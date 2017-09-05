@@ -1,31 +1,37 @@
 # -*- coding: utf-8 -*-
+
 import time
 from manager import contract_manager as cm, chart_manager as chart
 from strategy import __base_strategy
 from constant.constant_ import *
 from utils import util
+from manager.chart_manager import ChartManger
 
 
 class Para(__base_strategy.BaseStrategy):
     running_time = 0
     
-    def __init__(self, chart, stv, sbv):
-        self.chart = chart
-        self.stv = stv
-        self.sbv = sbv
+    def __init__(self):
+        pass
+    
+#     def __init__(self, chart, stv, sbv):
+#         self.chart = chart
+#         self.stv = stv
+#         self.sbv = sbv
     
     def is_it_ok(self, subject_code, current_price):
         global running_time
         s_time = time.time()
         try:
             차트 = self.get_chart(subject_code) # 이거 왜 쓴거임?
+            chart = ChartManger()
     
             ''' 차트 미생성 '''
             for chart_config in self.stv.info[subject_code][파라][차트]:
                 chart_type = chart_config[0]
                 time_unit = chart_config[1]
     
-                if chart.data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][파라][차트변수][chart_type][time_unit][초기캔들수]:
+                if chart().data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][파라][차트변수][chart_type][time_unit][초기캔들수]:
                     running_time = running_time + (time.time() - s_time)
                     return false
     
@@ -62,7 +68,7 @@ class Para(__base_strategy.BaseStrategy):
             running_time = running_time + (time.time() - s_time)
             return false
 
-    def is_it_sell(self, subject_code, current_price):
+    def is_it_sell(self, cm, subject_code, current_price):
         global running_time
     
         s_time = time.time()
@@ -70,7 +76,7 @@ class Para(__base_strategy.BaseStrategy):
             if not (chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중') :
                 running_time = running_time + (time.time() - s_time)
                 return false
-    
+            
             차트 = self.get_chart(subject_code)
             계약 = cm.get_contract_list(subject_code)
             매도수구분 = 매매없음
@@ -253,4 +259,3 @@ class Para(__base_strategy.BaseStrategy):
     def check_contract_in_tick(self, current_price):
         # TODO
         pass
-

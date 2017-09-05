@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 import time
-from manager import __manager
+
 from constant.constant_ import *
-from utils import util
 from var import subject, strategy_var as st
+from utils import util
+from manager.__manager import ManagerClass
 
 
 common_data = {}
 
 
-class ChartManger(__manager.ManagerClass):
+class ChartManger(ManagerClass):
     data = {}
     stv = None
 
     running_time = 0
 
-    def __init__(self):
-        super(ChartManger, self).__init__()
+#     def __init__(self):
+#         super(ChartManger, self).__init__()
 
     def __init__(self, stv, sbv):
         super(ChartManger, self).__init__()

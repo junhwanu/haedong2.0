@@ -4,7 +4,6 @@ import os
 import datetime
 import time
 from constant import constant_ as const
-from manager import chart_manager
 from var import strategy_var, subject
 
 
@@ -20,7 +19,7 @@ def get_today_date():
     return year + month + day
 
 
-def get_time(add_min, subject_code):
+def get_time(chart_manager, strategy_var, add_min, subject_code):
     # 현재 시간 정수형으로 return
     if const.MODE== const.REAL:  # 실제투자
         current_hour = time.localtime().tm_hour
@@ -48,7 +47,7 @@ def get_time(add_min, subject_code):
 
     return int(current_time)
 
-def is_sorted(subject_code, chart_type, time_unit):
+def is_sorted(chart_manager, strategy_var, subject_code, chart_type, time_unit):
     lst = strategy_var.info[subject_code][const.파라]['차트변수'][chart_type][time_unit]['이동평균선']
     차트 = chart_manager.data[subject_code][chart_type][time_unit]
 

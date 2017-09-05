@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 import configparser
 import json
-from var import subject, strategy_var
-from strategy import para
+
 from constant.constant_ import *
-
-
-from manager import __manager
+from strategy import para
 from utils.util import *
+from var import subject, strategy_var
+from manager.__manager import ManagerClass
 
 
-class StrategyManager(__manager.ManagerClass):
+class StrategyManager(ManagerClass):
 
     def __init__(self, sbv):
         super(StrategyManager, self).__init__()
@@ -18,11 +17,12 @@ class StrategyManager(__manager.ManagerClass):
 
     def get_strategy_var_from_config(self):
         stv = strategy_var.Strategy_Var()
+        MODULE_PATH = os.path.dirname(os.path.abspath(__file__).replace('\\', '/'))
 
         try:
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
-            config.read(CONFIG_PATH + '/strategy_var.cfg')
+            config.read(MODULE_PATH + '/strategy_var.cfg')
 
             for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]

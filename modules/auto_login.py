@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 
-import threading
-import time
-import psutil
-import pywinauto
 import configparser
 import os
-import pyautogui
-import cv2
+import threading
+import time
+
 from PIL import Image
-from modules import __module
+import cv2
+import psutil
+import pyautogui
+import pywinauto
+
+from modules.__module import ModuleClass
 
 
-class Login(__module.ModuleClass, threading.Thread):
+class Login(ModuleClass, threading.Thread):
     REAL_INVEST = False
     AUTO_LOGIN = True
 
