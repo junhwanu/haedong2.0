@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
-import time
 import configparser
 import json
 import subprocess
-import var.subject as subject
+# import var.subject as subject
 import var.strategy_var as strategy_var
-import manager.chart_manager as chart
-from multiprocessing import Process, Queue
-from utils.util import *
-from constant.constant_ import *
-from modules.kiwoom_tester import *
-from manager.db_manager import *
+
+# from manager.chart_manager import ChartManger
+from manager.contract_manager import ContractManager 
+from var import subject
+from multiprocessing import Process
+from utils import util
+from constant import constant_ as const
+from modules.kiwoom_tester import KiwoomTester 
+from manager.db_manager import DBManager
 from manager.log_manager import LogManager
 
 
@@ -19,28 +21,31 @@ class Tester:
     result = []
 
     log, res, err_log = None, None, None
+    
+    ctm = None
 
     def __init__(self):
         self.log, self.res, self.err_log = LogManager().get_logger()
         self.sbv = subject.Subject()
+        self.ctm = ContractManager()
 
     def simulate(self, kw, result):
         record = {}
         profit = 0
-        for subject_code in ctm.common_data.keys():
+        for subject_code in self.ctm.common_data.keys():
             kiwoom_tester = KiwoomTester(kw.stv)
 
             stv_info = kw.stv.info
             sbv_info = kw.sbv.info
-            chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-            time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
-            for candle in ctm.common_data[subject_code][chart_type][time_unit]:
+            chart_type = stv_info[subject_code][sbv_info[subject_code]][const.차트][0][0]
+            time_unit = stv_info[subject_code][sbv_info[subject_code]][const.차트][0][1]
+            for candle in self.ctm.common_data[subject_code][chart_type][time_unit]:
                 kiwoom_tester.chart.push(subject_code, chart_type, time_unit, candle)
 
                 order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
 
-                if order_info[신규매매]:
-                    kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
+                if order_info[const.신규매매]:
+                    kiwoom_tester.send_order(order_info[const.매도수구분], subject_code, order_info[const.수량])
 
             profit = profit + kiwoom_tester.누적수익
 
@@ -49,7 +54,7 @@ class Tester:
 
         result.append(record)
 
-    def proc(self):
+    def proc(self, strategy_var):
         global running_time
         dbm = DBManager()
         subject_symbol = ''
@@ -158,7 +163,7 @@ class Tester:
             self.log.info('테스트 종료.')
 
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
 
 
     def parse_tick(self, tick):
@@ -192,7 +197,7 @@ class Tester:
             cur_array = _cur_array[:]
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
-            config.read(CONFIG_PATH + '/tester_var.cfg')
+            config.read(const.CONFIG_PATH + '/tester_var.cfg')
             stv = strategy_var()
 
             for subject_code in self.sbv.info.keys():
@@ -201,49 +206,49 @@ class Tester:
                 if subject_symbol not in stv.info:
                     stv.info[subject_symbol] = {}
 
-                strategy = config.get(ST_CONFIG, subject_symbol)
+                strategy = config.get(const.ST_CONFIG, subject_symbol)
                 stv.info[subject_symbol][strategy] = {}
 
-                stv.info[subject_symbol][strategy][차트] = []
-                stv.info[subject_symbol][strategy][차트변수] = {}
-                stv.info[subject_symbol][strategy][차트변수][틱차트] = {}
-                stv.info[subject_symbol][strategy][차트변수][분차트] = {}
+                stv.info[subject_symbol][strategy][const.차트] = []
+                stv.info[subject_symbol][strategy][const.차트변수] = {}
+                stv.info[subject_symbol][strategy][const.차트변수][const.틱차트] = {}
+                stv.info[subject_symbol][strategy][const.차트변수][const.분차트] = {}
 
-                if strategy == 파라:
-                    stv.info[subject_symbol][strategy][차트변수][매매불가수익량] = self.get_divide_value(json.loads(config.get(subject_symbol, 매매불가수익량)), cur_array.pop(0))
-                    tmp_list = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
-                    stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱] = []
+                if strategy == const.파라:
+                    stv.info[subject_symbol][strategy][const.차트변수][const.매매불가수익량] = self.get_divide_value(json.loads(config.get(subject_symbol, const.매매불가수익량)), cur_array.pop(0))
+                    tmp_list = json.loads(config.get(subject_symbol, const.청산단계별드리블틱))
+                    stv.info[subject_symbol][strategy][const.차트변수][const.청산단계별드리블틱] = []
                     for list in tmp_list:
-                        stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱].append(self.get_divide_value(list, cur_array.pop(0)))
+                        stv.info[subject_symbol][strategy][const.차트변수][const.청산단계별드리블틱].append(self.get_divide_value(list, cur_array.pop(0)))
 
                 ## subject_symbol의 config 불러옴
-                chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+                chart_types = json.loads(config.get(subject_symbol, const.CHART_TYPE))
 
                 for chart_type in chart_types:
                     type = chart_type.split('_')[0]
                     time_unit = chart_type.split('_')[1]
 
                     section_str = subject_symbol + '_' + chart_type
-                    stv.info[subject_symbol][strategy][차트변수][type][time_unit] = {}
-                    stv.info[subject_symbol][strategy][차트].append( [ str(type), str(time_unit) ] )
-                    if strategy == 파라:
-                        tmp_list = json.loads(config.get(section_str, 이동평균선))
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선] = []
+                    stv.info[subject_symbol][strategy][const.차트변수][type][time_unit] = {}
+                    stv.info[subject_symbol][strategy][const.차트].append( [ str(type), str(time_unit) ] )
+                    if strategy == const.파라:
+                        tmp_list = json.loads(config.get(section_str, const.이동평균선))
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.이동평균선] = []
                         for list in tmp_list:
-                            stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선].append(self.get_divide_value(list, cur_array.pop(0)))
+                            stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.이동평균선].append(self.get_divide_value(list, cur_array.pop(0)))
 
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][INIT_AF] = self.get_divide_value(
-                            json.loads(config.get(section_str, INIT_AF)), cur_array.pop(0))
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.INIT_AF] = self.get_divide_value(
+                            json.loads(config.get(section_str, const.INIT_AF)), cur_array.pop(0))
 
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][MAX_AF] = self.get_divide_value(
-                            json.loads(config.get(section_str, MAX_AF)), cur_array.pop(0))
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.MAX_AF] = self.get_divide_value(
+                            json.loads(config.get(section_str, const.MAX_AF)), cur_array.pop(0))
 
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][초기캔들수] = self.get_divide_value(
-                            json.loads(config.get(section_str, 초기캔들수)), cur_array.pop(0))
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.초기캔들수] = self.get_divide_value(
+                            json.loads(config.get(section_str, const.초기캔들수)), cur_array.pop(0))
 
             return stv
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
 
 
     def create_simulater_var_table(self):
@@ -252,49 +257,49 @@ class Tester:
             cur_array = []
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
-            config.read(CONFIG_PATH + '/tester_var.cfg')
+            config.read(const.CONFIG_PATH + '/tester_var.cfg')
 
             for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]
 
-                strategy = config.get(ST_CONFIG, subject_symbol)
+                strategy = config.get(const.ST_CONFIG, subject_symbol)
 
-            if strategy == 파라:
-                tmp_list = json.loads(config.get(subject_symbol, 매매불가수익량))
+            if strategy == const.파라:
+                tmp_list = json.loads(config.get(subject_symbol, const.매매불가수익량))
                 max_array.append(self.calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
                 cur_array.append(0)
 
-                tmp_list = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
+                tmp_list = json.loads(config.get(subject_symbol, const.청산단계별드리블틱))
                 for list in tmp_list:
                     max_array.append(self.calc_divide_count(list[0], list[1], list[2]))
                     cur_array.append(0)
 
                 ## subject_symbol의 config 불러옴
-                chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+                chart_types = json.loads(config.get(subject_symbol, const.CHART_TYPE))
 
                 for chart_type in chart_types:
                     type = chart_type.split('_')[0]
                     time_unit = chart_type.split('_')[1]
 
                     section_str = subject_symbol + '_' + chart_type
-                    if strategy == 파라:
-                        tmp_list = json.loads(config.get(section_str, 이동평균선))
+                    if strategy == const.파라:
+                        tmp_list = json.loads(config.get(section_str, const.이동평균선))
                         for list in tmp_list:
                             max_array.append(self.calc_divide_count(list[0], list[1], list[2]))
                             cur_array.append(0)
-                        tmp_list = json.loads(config.get(section_str, INIT_AF))
+                        tmp_list = json.loads(config.get(section_str, const.INIT_AF))
                         max_array.append(self.calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
                         cur_array.append(0)
-                        tmp_list = json.loads(config.get(section_str, MAX_AF))
+                        tmp_list = json.loads(config.get(section_str, const.MAX_AF))
                         max_array.append(self.calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
                         cur_array.append(0)
-                        tmp_list = json.loads(config.get(section_str, 초기캔들수))
+                        tmp_list = json.loads(config.get(section_str, const.초기캔들수))
                         max_array.append(self.calc_divide_count(tmp_list[0], tmp_list[1], tmp_list[2]))
                         cur_array.append(0)
 
             return max_array, cur_array
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))
             return None, None
 
     def set_simulate_config(self, subject_code):
@@ -302,7 +307,7 @@ class Tester:
         try:
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
-            config.read(CONFIG_PATH + '/tester_var.cfg')
+            config.read(const.CONFIG_PATH + '/tester_var.cfg')
 
             stv = strategy_var()
             for subject_code in self.sbv.info.keys():
@@ -311,34 +316,34 @@ class Tester:
                 if subject_symbol not in stv.info:
                     stv.info[subject_symbol] = {}
 
-                strategy = config.get(ST_CONFIG, subject_symbol)
+                strategy = config.get(const.ST_CONFIG, subject_symbol)
                 stv.info[subject_symbol][strategy] = {}
 
-                stv.info[subject_symbol][strategy][차트] = []
-                stv.info[subject_symbol][strategy][차트변수] = {}
-                stv.info[subject_symbol][strategy][차트변수][틱차트] = {}
-                stv.info[subject_symbol][strategy][차트변수][분차트] = {}
+                stv.info[subject_symbol][strategy][const.차트] = []
+                stv.info[subject_symbol][strategy][const.차트변수] = {}
+                stv.info[subject_symbol][strategy][const.차트변수][const.틱차트] = {}
+                stv.info[subject_symbol][strategy][const.차트변수][const.분차트] = {}
 
-                if strategy == 파라:
-                    stv.info[subject_symbol][strategy][차트변수][매매불가수익량] = config.get(subject_symbol, 매매불가수익량)
-                    stv.info[subject_symbol][strategy][차트변수][청산단계별드리블틱] = json.loads(config.get(subject_symbol, 청산단계별드리블틱))
+                if strategy == const.파라:
+                    stv.info[subject_symbol][strategy][const.차트변수][const.매매불가수익량] = config.get(subject_symbol, const.매매불가수익량)
+                    stv.info[subject_symbol][strategy][const.차트변수][const.청산단계별드리블틱] = json.loads(config.get(subject_symbol, const.청산단계별드리블틱))
 
                 ## subject_symbol의 config 불러옴
-                chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
+                chart_types = json.loads(config.get(subject_symbol, const.CHART_TYPE))
 
                 for chart_type in chart_types:
                     type = chart_type.split('_')[0]
                     time_unit = chart_type.split('_')[1]
 
                     section_str = subject_symbol + '_' + chart_type
-                    stv.info[subject_symbol][strategy][차트변수][type][time_unit] = {}
-                    stv.info[subject_symbol][strategy][차트].append( [ str(type), str(time_unit) ] )
-                    if strategy == 파라:
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][이동평균선] = json.loads(config.get(section_str, 이동평균선))
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][INIT_AF] = config.getfloat(section_str, INIT_AF)
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][MAX_AF] = config.getfloat(section_str, MAX_AF)
-                        stv.info[subject_symbol][strategy][차트변수][type][time_unit][초기캔들수] = config.getint(section_str, 초기캔들수)
+                    stv.info[subject_symbol][strategy][const.차트변수][type][time_unit] = {}
+                    stv.info[subject_symbol][strategy][const.차트].append( [ str(type), str(time_unit) ] )
+                    if strategy == const.파라:
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.이동평균선] = json.loads(config.get(section_str, const.이동평균선))
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.INIT_AF] = config.getfloat(section_str, const.INIT_AF)
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.MAX_AF] = config.getfloat(section_str, const.MAX_AF)
+                        stv.info[subject_symbol][strategy][const.차트변수][type][time_unit][const.초기캔들수] = config.getint(section_str, const.초기캔들수)
 
 
         except Exception as err:
-            self.err_log.error(get_error_msg(err))
+            self.err_log.error(util.get_error_msg(err))

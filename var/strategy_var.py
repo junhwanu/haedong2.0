@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from constant import *
-
 class Strategy_Var():
     '''
     info = {

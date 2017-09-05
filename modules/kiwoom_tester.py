@@ -2,7 +2,7 @@
 
 from manager import chart_manager as ctm, strategy_manager as stm
 from var import subject
-from constant.constant_ import *
+from constant import constant_ as const
 from modules.__module import ModuleClass
 
 class KiwoomTester(ModuleClass):
@@ -51,20 +51,20 @@ class KiwoomTester(ModuleClass):
         단위 = self.subject_var.info[종목코드]['단위']     # 금의 경우 0.1
 
         if ctm().get_contract_count(종목코드) > 0: #계약을 가지고 있을때
-            if 플로우 == 상향:
-                if 차트[저가] < sar: # 하향 반전 됨
+            if 플로우 == const.상향:
+                if 차트[const.저가] < sar: # 하향 반전 됨
                     return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수))
 
-            elif 플로우 == 하향:
-                if 차트[고가] >= sar: # 상향 반전 됨
+            elif 플로우 == const.하향:
+                if 차트[const.고가] >= sar: # 상향 반전 됨
                     return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수) + 단위)
 
         else: # 계약을 가지고 있지 않을 때
-            if 플로우 == 상향:
-                if 차트[저가] < sar: # 하향 반전 됨
+            if 플로우 == const.상향:
+                if 차트[const.저가] < sar: # 하향 반전 됨
                     return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수))
 
-            elif 플로우 == 하향:
-                if 차트[고가] >= sar:
+            elif 플로우 == const.하향:
+                if 차트[const.고가] >= sar:
                     return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수) + 단위)
         pass

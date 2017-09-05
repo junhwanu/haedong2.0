@@ -4,7 +4,7 @@ import os
 import datetime
 import time
 from constant import constant_ as const
-from var import strategy_var, subject
+from var import subject
 
 
 def get_today_date():
