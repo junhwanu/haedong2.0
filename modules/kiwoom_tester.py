@@ -39,5 +39,6 @@ class KiwoomTester(__module.ModuleClass):
         pass
 
     def check_contract_in_candle(self, 종목코드, 캔들, 인덱스):
+        return {'신규매매': False}
         return stm.check_contract_in_candle(종목코드, 캔들, 인덱스)
 

@@ -79,7 +79,17 @@ class Tester:
 
         try:
             ''' 해당 종목 테이블 가져옴 '''
-            tables = dbm.get_table_list(subject_symbol, start_date, end_date)
+            '''
+            내가 입력한 날짜에 맞는 월물만 남기고 Table 리스트를 지워야 함.
+            예를들어 select min(date) as min, max(date) as max from GCZ17;과 같은 식으로 월물의 시작, 종료일을 가져와 체크
+            '''
+            _tables = dbm.get_table_list(subject_symbol)
+            tables = []
+            for table_name in _tables:
+                print(table_name[0], start_date, end_date)
+                if dbm.is_matched_table(table_name[0], start_date, end_date):
+                    tables.append(table_name[0])
+            '''
             table_list = {}
             subject_codes = []
             for table in tables:
@@ -92,29 +102,34 @@ class Tester:
                     strategy_var.info[subject_code] = strategy_var.info[subject_symbol] # 전략변수 복사
 
                 table_list[subject_code].append(table_name)
-
+            '''
             ''' 월물별 테이블에서 데이터 가져옴 '''
+            '''
+            입력한 날짜에 맞는 캔들만 가져옴.
+            '''
             data = {}
-            for subject_code in subject_codes:
-                data[subject_code] = []
-                self.log.info('%s 월물 테이블 내용 수신 시작.' % subject_code)
-                for table_name in table_list[subject_code]:
-                    data[subject_code].append(dbm.get_table(table_name))
+            for table_name in tables:
+                data[table_name] = []
+                self.log.info('%s 월물 테이블 내용 수신 시작.' % table_name)
+                #data[table_name].append(dbm.get_table(table_name, start_date, end_date))
 
+            self.start_date = start_date
+            self.end_date = end_date
+            self.subject_symbol = subject_symbol
+
+            '''
+            상단까지는 완료
+            '''
             while True:
-                self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
+                # self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                 # data[subject_code] -> ctm.common_data에 setting
                 # tester_var.cfg에서 subject_symbol에 맞는 chart_type, time_unit을 가져와서 계산한다.
-
-                self.result['시작일'] = start_date
-                self.result['종료일'] = end_date
-                self.result['종목코드'] = subject_symbol
 
                 self.log.info("총 테스트 횟수를 계산합니다.")
                 total_count = 1
                 stv_table, cur_table = self.create_simulater_var_table()  # 총 테스트 횟수 계산
                 for cnt in stv_table:
-                    total_count * (cnt+1)
+                    total_count *= (cnt+1)
 
                 self.log.info("총 %s번의 테스트." % total_count)
 
@@ -122,13 +137,39 @@ class Tester:
                 procs = []
                 while True:
                     stv = self.calc_strategy_var(cur_table)
-                    print(stv.info)
-                    kw_tester = KiwoomTester(stv)
 
-                    ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
-                    process = Process(target=self.simulate(), args=(kw_tester, self.result))
-                    procs.append(process)
-                    process.start()
+                    # 차트 수신
+                    if chart_manager.common_data == {}:
+                        for subject_code in tables:
+                            chart_manager.common_data[subject_code] = {}
+                            for strategy in stv.info[subject_symbol]:
+                                for chart_config in stv.info[subject_symbol][strategy][차트]:
+                                    if chart_config[0] not in chart_manager.common_data[subject_code]:
+                                        chart_manager.common_data[subject_code][chart_config[0]] = {}
+                                    if chart_config[1] not in chart_manager.common_data[subject_code][chart_config[0]]:
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]] = {}
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
+                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
+                                        data[subject_code] = dbm.request_tick_candle(subject_code, chart_config[1])
+                                        for candle in data[subject_code]:
+                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][현재가].append(candle[현재가])
+                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][고가].append(candle[고가])
+                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][저가].append(candle[저가])
+                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][시가].append(candle[시가])
+                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간].append(candle[체결시간])
+
+                    print(chart_manager.common_data)
+                    print(stv.info)
+
+                    # kw_tester = KiwoomTester(stv)
+                    #
+                    # ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
+                    # process = Process(target=self.simulate(), args=(kw_tester, self.result))
+                    # procs.append(process)
+                    # process.start()
 
                     if self.increase_the_number_of_digits(stv_table, cur_table) == False: break
 
@@ -140,14 +181,15 @@ class Tester:
                 ''' 이 부분에 result를 수익별로 sorting '''
 
                 ''' 상위 N개의 결과 보여 줌 '''
-                for i in range(0, 10):
+                print(len(self.result))
+                for i in range(0, min(len(self.result), 10)):
                     self.log.info(self.result[i]) # 더 디테일하게 변경
 
                 self.log.info("해당 코드의 Git Hash : %s" % label)
                 while True:
                     self.log.info("Database에 넣을 결과 Index를 입력해주세요.(종료 : -1)")
                     idx = input()
-                    if idx == -1: break
+                    if idx == '-1': break
                     self.log.info("저장하신 결과에 대한 코드를 나중에 확인하시기 위해선, 코드를 변경하시기 전에 Commit을 해야 합니다.")
 
                     ''' 해당 index의 결과를 stv를 정렬해서, 결과 DB에 저장. '''
@@ -164,7 +206,7 @@ class Tester:
     def parse_tick(tick):
         return tick[0], tick[1], tick[2]
 
-    def increase_the_number_of_digits(max_array, cur_array):
+    def increase_the_number_of_digits(self, max_array, cur_array):
         cur_array[-1] += 1
         for i in range(len(cur_array)-1 , -1, -1):
             if cur_array[i] > max_array[i]:
@@ -175,7 +217,7 @@ class Tester:
             else: break
         return True
 
-    def calc_divide_count(start, end, interval):
+    def calc_divide_count(self, start, end, interval):
         ''' [10, 40, 5] 일 경우 6을 return 해주는 코드, [0, 0, 0]이면 1이아니라 0을 리턴한다.
             테스트 stv의 max_array를 만들기 위해 사용 됨 '''
         if start == end: return 0
@@ -193,7 +235,7 @@ class Tester:
             # 전략 변수 Config 불러오기
             config = configparser.RawConfigParser()
             config.read(CONFIG_PATH + '/tester_var.cfg')
-            stv = strategy_var()
+            stv = strategy_var.Strategy_Var()
 
             for subject_code in self.sbv.info.keys():
                 subject_symbol = subject_code[:2]

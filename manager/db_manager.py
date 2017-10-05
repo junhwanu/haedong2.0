@@ -59,15 +59,24 @@ class DBManager(__manager.ManagerClass):
         query = 'create table %s select * from root_table' % table_name
         return self.exec_query(query)
 
-    def get_table(self, table_name):
-        query = 'select date, price, working_day from %s' % table_name
+    def get_table(self, table_name, start_date=None, end_date=None):
+        if start_date is not None: query = 'select date, price, working_day from %s' % table_name
+        else: query = "select date, price, working_day from %s where date >= timestamp('%s') and date = timestamp('%s')" % (table_name, start_date, end_date)
+
         return self.exec_query(query, FETCH_ALL)
 
-    def get_table_list(self, subject_symbol, start_date, end_date):
-        query = "show tables where substr(Tables_in_haedong, 1, %s) = '%s'\
-         and substr(Tables_in_haedong, (select char_length(Tables_in_haedong))\
-          - 7, 8) between '%s' and '%s'" % (len(subject_symbol), subject_symbol, start_date, end_date)
-        return self.exec_query(query, FETCH_ALL)
+    def get_table_list(self, subject_symbol):
+        query = '''
+        SELECT 
+         table_name
+        FROM 
+         information_schema.tables
+        WHERE 
+         table_schema = DATABASE()
+         and
+         substr(table_name, 1, %s) = '%s'
+        ''' %  (len(subject_symbol), subject_symbol)
+        return list(self.exec_query(query, FETCH_ALL))
 
     def get_name(self):
         return str(self.__class__.__name__)
@@ -104,6 +113,7 @@ class DBManager(__manager.ManagerClass):
             on t1.min_id = t2.id
          inner join %s t3
             on t1.max_id = t3.id
+         limit 10
         ;
         ''' % (tick_unit, subject_code, tick_unit, subject_code, subject_code)
 
@@ -111,6 +121,29 @@ class DBManager(__manager.ManagerClass):
 
     def print_status(self):
         print(self.__getattribute__())
+
+    def is_matched_table(self, table_name, c, d):
+        query = '''
+        select
+            *
+        from
+            (select date(date) as s from %s order by date asc limit 1) R1
+        inner join
+            (select date(date) as e from %s order by date desc limit 1) R2
+        ''' % (table_name, table_name)
+
+        try:
+            result = self.exec_query(query, fetch_type=FETCH_ONE, cursor_type=CURSOR_DICT)
+
+            c = c[:4] + '-' + c[4:6] + '-' + c[6:]
+            d = d[:4] + '-' + d[4:6] + '-' + d[6:]
+            a = str(result['s'])
+            b = str(result['e'])
+
+        except Exception as err:
+            print(err)
+        if c <= a <= d <= b or c <= a <= b <= d or a <= c <= d <= b or a <= c <= b <= d: return True
+        return False
 
 if __name__ == '__main__':
     dbm = DBManager()

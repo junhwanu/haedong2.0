@@ -8,10 +8,10 @@ CONFIG_PATH = MAIN_DIR + '/config'
 ST_CONFIG = 'STRATEGY_CONFIG'
 CHART_TYPE = 'CHART_TYPE'
 
-DB_SERVER_ADDR = "211.253.28.132"
+DB_SERVER_ADDR = "211.253.10.91"
 DB_USER_ID = "root"
 DB_USER_PWD = "goehddl"
-DB_NAME = "haedong"
+DB_NAME = "haedong4"
 DB_CHARSET = "utf8"
 
 MODE = None
