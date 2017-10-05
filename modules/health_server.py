@@ -26,6 +26,7 @@ class ClientHandler(socketserver.BaseRequestHandler):
 
 
 class HealthConnectManager(__module.ModuleClass, threading.Thread):
+    server = None
 
     def __init__(self):
         super(HealthConnectManager, self).__init__()
@@ -36,20 +37,29 @@ class HealthConnectManager(__module.ModuleClass, threading.Thread):
     def run(self):
 
         try:
-            server = socketserver.TCPServer((self.bind_ip, self.bind_port), ClientHandler)
-            print("Start health connection thr! Waiting client from port #" + str(self.bind_port))
+            self.server = socketserver.TCPServer((self.bind_ip, self.bind_port), ClientHandler)
+            
+            self.log.info("Start health connection thr! Waiting client from port #" + str(self.bind_port))
             poll_interval = 1
-            server.serve_forever(poll_interval)
+            self.server.serve_forever(poll_interval)
+            
+        except OSError as err:
+            self.log.info("Exception ({0})".format(err))
+            sys.exit(-1)
 
         except Exception as err:
-            print("Exception ({0})".format(err))
+            self.log.info("Exception ({0})".format(err))
             sys.exit(-1)
 
     def get_name(self):
         return str(self.__class__.__name__)
 
     def print_status(self):
-        print(self.__getattribute__())
+        self.log.info(self.__getattribute__())
+        
+    def server_close(self):
+        if self.server is not None:
+            self.server.shutdown()
 
 
 if __name__ == '__main__':

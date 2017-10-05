@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 
-import sys, os, time, threading
-from modules import kiwoom, health_server
-from manager import log_manager
-from constant import constant as const
+import sys, time
+from modules import kiwoom, health_server, destroy_python
+from constant import constant_ as const
 from simulate import tester
+from manager.log_manager import LogManager
 
 # import simulate.tester as tester
-# import constant.constant as const
+# import constant.constant_ as const
 # import modules.kiwoom as kiwoom
 # import modules.health_server as health_server
 
@@ -16,13 +16,13 @@ from simulate import tester
 # import chart_manager as chart
 
 
-class Haedong:
+class Haedong(object):
     running_time = 0
     log, res, err_log = None, None, None
 
     def __init__(self):
         super(Haedong, self).__init__()
-        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager().get_logger()
 
     def run(self):
         s_time = time.time()
@@ -35,15 +35,19 @@ class Haedong:
                 const.MODE = int(sys.argv[1])
 
             if const.MODE is const.REAL:
+                #파이썬 프로그램 종료 기능
+                destroy_python.Destroy_python()
+                
                 # health server run
                 health_server_thread = health_server.HealthConnectManager()
                 health_server_thread.start()
-                kw_api = kiwoom.Api()
-
-                health_server_thread.close()
-                health_server_thread.join(5)
-                print("헬스 체크서버 종료")
-
+                
+                kiwoom.Api()
+            
+                health_server_thread.server_close()
+                health_server_thread.join(timeout=5)
+                self.log.info("헬스 체크서버 종료")
+                
                 break
 
             elif const.MODE is const.TEST:
@@ -53,6 +57,9 @@ class Haedong:
 
             print("다시 입력해주세요.")
 
+        self.log.info("Haedong 프로그램이 종료됩니다.")
+        sys.exit()
+        
         '''
         self.running_time = time.time() - s_time
 

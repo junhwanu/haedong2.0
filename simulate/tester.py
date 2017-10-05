@@ -20,9 +20,12 @@ class Tester:
 
     log, res, err_log = None, None, None
 
+    ctm = None
+
     def __init__(self):
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
         self.sbv = subject.Subject()
+        self.ctm = ContractManager()
 
     def simulate(self, kw, result):
         record = {}
@@ -49,7 +52,7 @@ class Tester:
 
         result.append(record)
 
-    def proc(self):
+    def proc(self, strategy_var):
         global running_time
         dbm = DBManager()
         subject_symbol = ''

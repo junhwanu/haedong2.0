@@ -1,6 +1,8 @@
 import abc
 import inspect
-from manager import log_manager, telepot_manager
+
+from manager.telepot_manager import TelepotManager  
+from manager.log_manager import LogManager
 
 
 class ModuleClass(metaclass=abc.ABCMeta):
@@ -21,7 +23,7 @@ class ModuleClass(metaclass=abc.ABCMeta):
         raise NotImplementedError(inspect.stack()[0][3] + ' is not impplemented.')
 
     def init_logger(self):
-        self.log, self.res, self.err_log = log_manager.LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = LogManager().get_logger()
 
     def init_telepot(self):
-        self.telepot = telepot_manager.TelepotManager.__call__()
+        self.telepot = TelepotManager()

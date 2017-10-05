@@ -4,15 +4,17 @@ import threading
 import time
 
 from PyQt5 import QAxContainer, QtWidgets
-from modules import auto_login, __module
+from modules import auto_login, close_popup
 from manager import chart_manager, contract_manager, strategy_manager
 from constant import screen
-from constant.constant import *
+from constant import constant_ as const
+from var import subject
 from var import *
-from utils.util import *
+from utils import util
+from modules.__module import ModuleClass
 
 
-class Api(__module.ModuleClass):
+class Api(ModuleClass):
     req = []
     input_value = []
     last_req_time = time.time()
@@ -29,7 +31,7 @@ class Api(__module.ModuleClass):
     contract_manager = None
     chart_manager = None
     strategy_manager = None
-
+    
     def __init__(self, _stv=None):
         super(Api, self).__init__()
 
@@ -63,6 +65,8 @@ class Api(__module.ModuleClass):
         else:
             self.log.debug("MODE:"+str(const.MODE))
 
+        self.log.info("Headong API 종료")
+            
     '''
     Interface Methods
     '''
@@ -81,8 +85,7 @@ class Api(__module.ModuleClass):
                 self.log.debug("연결 성공")
 
                 # auto login
-                lg = auto_login.Login()
-                lg.start()
+                auto_login.Login().start()
 
             else:
                 self.log.debug("연결 실패")
@@ -132,7 +135,7 @@ class Api(__module.ModuleClass):
 
     def get_futures_deposit(self):
         lists = ['MTL', 'ENG', 'CUR', 'IDX', 'CMD']
-        today = get_today_date()
+        today = util.get_today_date()
         for list_ in lists:
             self.set_input_value("품목구분", list_)
             self.set_input_value("적용일자", today)
@@ -235,7 +238,7 @@ class Api(__module.ModuleClass):
                     self.send_request()
                     self.last_req_time = time.time()
             else:
-                self.err_log.error('send request() : %s' % parse_error_code(rtn))
+                self.err_log.error('send request() : %s' % util.parse_error_code(rtn))
 
     def set_input_value(self, sID, sValue):
         """
@@ -251,7 +254,7 @@ class Api(__module.ModuleClass):
             # rq_thread.set_input_value(sID, sValue)
             self.input_value.append([sID, sValue])
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def comm_rq_data(self, sRQName, sTrCode, nPrevNext, sScreenNo):
         """
@@ -282,17 +285,32 @@ class Api(__module.ModuleClass):
 
             now = time.localtime()
             if const.MODE == const.REAL and \
-                    ((now.tm_wday == 5 and get_time(0, None) > 600) or (now.tm_wday == 6)):
+                    ((now.tm_wday == 5 and util.get_time(0, None) > 600) or (now.tm_wday == 6)):
                 time.sleep(0.25)
                 self.send_request()
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
-    def quit(self):
+    def quit(self, nErrCode):
         """ Quit the server """
-        QtWidgets.QApplication.quit()
-        sys.exit()
+        result = None
+        if nErrCode == 0:
+            result = str('Kiwoom API 종료 상태[%s]' % util.parse_error_code(nErrCode))
+            self.log.info(result)
+             
+        elif nErrCode == -106:
+            result = str('Kiwoom API 종료 상태[%s]' % util.parse_error_code(nErrCode))
+            
+            # 팝업 종료 필요
+            self.err_log.error(result)
+            self.app.quit()
+            self.log.info("4초 후 팝업 종료")
+            close_popup.ClosePopup(4).start()
+            
+        else:
+            result = str('에러 상태 체크 필요[%s]' % util.parse_error_code(nErrCode))
+            self.err_log.error(result)
 
     '''
     Control Event Handlers
@@ -329,13 +347,15 @@ class Api(__module.ModuleClass):
             # time.sleep(wait_time)
             # const.MODE = const.DB_INSERT
             # DB INSERT CODE
-            pass
+            self.quit(nErrCode)
+        
+        elif nErrCode == -106:
+            # Kiwoom API 종료 상태
+            self.quit(nErrCode)
 
         else:
             # 로그인 실패 로그 표시 및 에러코드별 에러내용 발송
-            self.err_log.error('로그인 실패[%s]' % parse_error_code(nErrCode))
-
-            self.quit()
+            self.quit(nErrCode)
 
     def OnReceiveTrData(self, sScrNo, sRQName, sTrCode, sRecordName, sPreNext, candle=None):
         """
@@ -404,12 +424,12 @@ class Api(__module.ModuleClass):
 
                             chart_data['현재가변동횟수'] = int(chart_data['임시데이터'][0])
                             chart_data['현재캔들'] = {}
-                            chart_data['현재캔들'][현재가] = float(chart_data['임시데이터'][1])
+                            chart_data['현재캔들'][const.현재가] = float(chart_data['임시데이터'][1])
                             chart_data['현재캔들']['거래량'] = int(chart_data['임시데이터'][2])
-                            chart_data['현재캔들'][체결시간] = str(chart_data['임시데이터'][3])
-                            chart_data['현재캔들'][시가] = float(chart_data['임시데이터'][4])
-                            chart_data['현재캔들'][고가] = float(chart_data['임시데이터'][5])
-                            chart_data['현재캔들'][저가] = float(chart_data['임시데이터'][6])
+                            chart_data['현재캔들'][const.체결시간] = str(chart_data['임시데이터'][3])
+                            chart_data['현재캔들'][const.시가] = float(chart_data['임시데이터'][4])
+                            chart_data['현재캔들'][const.고가] = float(chart_data['임시데이터'][5])
+                            chart_data['현재캔들'][const.저가] = float(chart_data['임시데이터'][6])
                             chart_data['현재캔들']['영업일자'] = str(chart_data['임시데이터'][7])
 
                             chart_data['임시캔들'] = []    # 초기 데이터 수신 중 완성된 캔들을 임시로 저장하고, 수신이 완료된 후 Push
@@ -422,17 +442,17 @@ class Api(__module.ModuleClass):
                             for tick in chart_data['임시틱']:
                                 ''' 첫 번째 데이터 수신 전 해당 차트로부터 들어온 Tick들 처리 '''
                                 if chart_data['현재가변동횟수'] == 0:
-                                    chart_data['현재캔들'][시가] = tick[0]
+                                    chart_data['현재캔들'][const.시가] = tick[0]
 
                                 chart_data['현재가변동횟수'] += 1
-                                if tick[0] < chart_data['현재캔들'][저가]:
-                                    chart_data['현재캔들'][저가] = tick[0]
-                                if tick[0] > chart_data['현재캔들'][고가]:
-                                    chart_data['현재캔들'][고가] = tick[0]
+                                if tick[0] < chart_data['현재캔들'][const.저가]:
+                                    chart_data['현재캔들'][const.저가] = tick[0]
+                                if tick[0] > chart_data['현재캔들'][const.고가]:
+                                    chart_data['현재캔들'][const.고가] = tick[0]
 
                                 if chart_data['현재가변동횟수'] == time_unit:
-                                    chart_data['현재캔들'][체결시간] = tick[1]
-                                    chart_data['현재캔들'][현재가] = tick[0]
+                                    chart_data['현재캔들'][const.체결시간] = tick[1]
+                                    chart_data['현재캔들'][const.현재가] = tick[0]
                                     chart_data['현재가변동횟수'] = 0
                                     if chart_data['인덱스'] == -1:
                                         chart_data['임시캔들'].append(chart_data['현재캔들'])
@@ -451,12 +471,12 @@ class Api(__module.ModuleClass):
 
                             candle = {}
                             while current_idx > 8:
-                                candle[현재가] = float(chart_data['임시데이터'][current_idx])
+                                candle[const.현재가] = float(chart_data['임시데이터'][current_idx])
                                 candle['거래량'] = int(chart_data['임시데이터'][current_idx + 1])
-                                candle[체결시간] = str(chart_data['임시데이터'][current_idx + 2])
-                                candle[시가] = float(chart_data['임시데이터'][current_idx + 3])
-                                candle[고가] = float(chart_data['임시데이터'][current_idx + 4])
-                                candle[저가] = float(chart_data['임시데이터'][current_idx + 5])
+                                candle[const.체결시간] = str(chart_data['임시데이터'][current_idx + 2])
+                                candle[const.시가] = float(chart_data['임시데이터'][current_idx + 3])
+                                candle[const.고가] = float(chart_data['임시데이터'][current_idx + 4])
+                                candle[const.저가] = float(chart_data['임시데이터'][current_idx + 5])
                                 candle['영업일자'] = str(chart_data['임시데이터'][current_idx + 6])
                                 current_idx -= 7
 
@@ -548,7 +568,7 @@ class Api(__module.ModuleClass):
                 self.log.debug('예수금 현황 : ' + str(self.contract_manager.예수금))
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def OnReceiveChejanData(self, sGubun, nItemCnt, sFidList, o_info=None):
         """
@@ -603,7 +623,7 @@ class Api(__module.ModuleClass):
                     self.telepot.send_message(msg)
 
         except Exception as err:
-            self.log.error(get_error_msg(err))
+            self.log.error(util.get_error_msg(err))
 
     def OnReceiveRealData(self, subject_code, sRealType, sRealData):
         """
@@ -661,18 +681,18 @@ class Api(__module.ModuleClass):
                         return
 
                     if chart_data['현재가변동횟수'] == 0:
-                        chart_data['현재캔들'][시가] = current_price
+                        chart_data['현재캔들'][const.시가] = current_price
 
                     chart_data['현재가변동횟수'] += 1
-                    if current_price < chart_data['현재캔들'][저가]:
-                        chart_data['현재캔들'][저가] = current_price
+                    if current_price < chart_data['현재캔들'][const.저가]:
+                        chart_data['현재캔들'][const.저가] = current_price
 
-                    if current_price > chart_data['현재캔들'][고가]:
-                        chart_data['현재캔들'][고가] = current_price
+                    if current_price > chart_data['현재캔들'][const.고가]:
+                        chart_data['현재캔들'][const.고가] = current_price
 
                     if chart_data['현재가변동횟수'] == int(time_unit):
-                        chart_data['현재캔들'][체결시간] = current_time
-                        chart_data['현재캔들'][현재가] = current_price
+                        chart_data['현재캔들'][const.체결시간] = current_time
+                        chart_data['현재캔들'][const.현재가] = current_price
                         chart_data['현재가변동횟수'] = 0
                         if chart_data['인덱스'] == -1 and const.MODE == const.REAL:
                             chart_data['임시캔들'].append(chart_data['현재캔들'])
@@ -702,13 +722,13 @@ class Api(__module.ModuleClass):
 
                 if order_contents['신규주문']:
                     self.res.info('신규주문 : %s' % order_contents)
-                    self.res.info("체결시간:%s" % chart_data[체결시간][-1])
+                    self.res.info("체결시간:%s" % chart_data[const.체결시간][-1])
                     self.send_order(order_contents['매도수구분'], subject_code, order_contents['수량'])
 
             ''' 전략 선택 '''
             self.strategy_manager.strategy_selector(subject_code)
 
-        except Exception as err:
+        except Exception:
             pass
             # self.log.error(get_error_msg(err))
 
