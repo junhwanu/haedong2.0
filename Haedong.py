@@ -2,7 +2,7 @@
 
 import sys, time
 from modules import kiwoom, health_server, destroy_python
-from constant import constant_ as const
+from constant import constant as const
 from simulate import tester
 from manager.log_manager import LogManager
 

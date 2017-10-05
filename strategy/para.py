@@ -2,7 +2,7 @@
 
 import time
 from strategy import __base_strategy
-from constant import constant_ as const
+from constant import constant as const
 from utils import util
 
 

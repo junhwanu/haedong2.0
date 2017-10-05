@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 import time
 
-from constant import constant_ as const
+from constant import constant as const
 # from var import subject, strategy_var as st
 from utils import util
 from manager.__manager import ManagerClass
 
-
+common_data = {}
 class ChartManger(ManagerClass):
-    common_data = {}
     
     data = {}
     stv = None

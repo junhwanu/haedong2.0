@@ -4,7 +4,7 @@ import logging
 import os
 import time
 
-from constant import constant_ as const
+from constant import constant as const
 from utils.singleton import Singleton
 
 

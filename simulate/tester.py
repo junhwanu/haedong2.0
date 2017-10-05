@@ -25,7 +25,6 @@ class Tester:
     def __init__(self):
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
         self.sbv = subject.Subject()
-        self.ctm = ContractManager()
 
     def simulate(self, kw, result):
         record = {}
@@ -52,7 +51,7 @@ class Tester:
 
         result.append(record)
 
-    def proc(self, strategy_var):
+    def proc(self):
         global running_time
         dbm = DBManager()
         subject_symbol = ''
@@ -142,29 +141,29 @@ class Tester:
                     stv = self.calc_strategy_var(cur_table)
 
                     # 차트 수신
-                    if chart_manager.common_data == {}:
+                    if chart.common_data == {}:
                         for subject_code in tables:
-                            chart_manager.common_data[subject_code] = {}
+                            chart.common_data[subject_code] = {}
                             for strategy in stv.info[subject_symbol]:
                                 for chart_config in stv.info[subject_symbol][strategy][차트]:
-                                    if chart_config[0] not in chart_manager.common_data[subject_code]:
-                                        chart_manager.common_data[subject_code][chart_config[0]] = {}
-                                    if chart_config[1] not in chart_manager.common_data[subject_code][chart_config[0]]:
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]] = {}
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
-                                        chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
+                                    if chart_config[0] not in chart.common_data[subject_code]:
+                                        chart.common_data[subject_code][chart_config[0]] = {}
+                                    if chart_config[1] not in chart.common_data[subject_code][chart_config[0]]:
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]] = {}
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
+                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
                                         data[subject_code] = dbm.request_tick_candle(subject_code, chart_config[1])
                                         for candle in data[subject_code]:
-                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][현재가].append(candle[현재가])
-                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][고가].append(candle[고가])
-                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][저가].append(candle[저가])
-                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][시가].append(candle[시가])
-                                            chart_manager.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간].append(candle[체결시간])
+                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][현재가].append(candle[현재가])
+                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][고가].append(candle[고가])
+                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][저가].append(candle[저가])
+                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][시가].append(candle[시가])
+                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간].append(candle[체결시간])
 
-                    print(chart_manager.common_data)
+                    print(chart.common_data)
                     print(stv.info)
 
                     # kw_tester = KiwoomTester(stv)

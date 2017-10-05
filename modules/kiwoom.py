@@ -7,7 +7,7 @@ from PyQt5 import QAxContainer, QtWidgets
 from modules import auto_login, close_popup
 from manager import chart_manager, contract_manager, strategy_manager
 from constant import screen
-from constant import constant_ as const
+from constant import constant as const
 from var import subject
 from var import *
 from utils import util

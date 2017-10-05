@@ -3,7 +3,7 @@ import configparser
 import json
 import os
 
-from constant import constant_ as const
+from constant import constant as const
 from strategy import para
 from utils import util
 from var import strategy_var

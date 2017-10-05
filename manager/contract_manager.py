@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from constant import constant_ as const
+from constant import constant as const
 # from strategy import para
 from utils import util
 from var import subject

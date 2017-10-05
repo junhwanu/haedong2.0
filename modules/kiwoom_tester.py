@@ -3,7 +3,7 @@
 from manager import chart_manager as ctm, strategy_manager as stm
 from modules import __module
 from var import subject
-from constant import constant_ as const
+from constant import constant as const
 from modules.__module import ModuleClass
 
 class KiwoomTester(__module.ModuleClass):
