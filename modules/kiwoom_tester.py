@@ -14,7 +14,7 @@ class KiwoomTester(__module.ModuleClass):
     def __init__(self, _stv = None):
         super(KiwoomTester, self).__init__()
         self.stv = _stv
-        self.chart = ctm.ChartManger(self.stv)
+        self.chart = ctm.ChartManger(self.stv, subject.Subject())
         self.stm = stm.StrategyManager(subject.Subject())
         self.subject_var = subject.Subject()
 

@@ -113,7 +113,6 @@ class DBManager(__manager.ManagerClass):
             on t1.min_id = t2.id
          inner join %s t3
             on t1.max_id = t3.id
-         limit 10
         ;
         ''' % (tick_unit, subject_code, tick_unit, subject_code, subject_code)
 

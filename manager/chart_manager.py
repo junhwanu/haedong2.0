@@ -50,7 +50,11 @@ class ChartManger(ManagerClass):
                             self.data[subject_code][chart_type][time_unit]['거래량'] = []
                             self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
                         elif const.MODE == const.TEST:
-                            self.data[subject_code][chart_type][time_unit] = common_data[subject_code][chart_type][time_unit]
+                            self.data[subject_code][chart_type][time_unit][const.현재가] = common_data[subject_code][chart_type][time_unit][const.현재가]
+                            self.data[subject_code][chart_type][time_unit][const.시가] = common_data[subject_code][chart_type][time_unit][const.시가]
+                            self.data[subject_code][chart_type][time_unit][const.고가] = common_data[subject_code][chart_type][time_unit][const.고가]
+                            self.data[subject_code][chart_type][time_unit][const.저가] = common_data[subject_code][chart_type][time_unit][const.저가]
+                            self.data[subject_code][chart_type][time_unit][const.체결시간] = common_data[subject_code][chart_type][time_unit][const.체결시간]
                             self.data[subject_code][chart_type][time_unit]['인덱스'] = 0
 
                         self.data[subject_code][chart_type][time_unit]['현재가변동횟수'] = 0
@@ -131,15 +135,16 @@ class ChartManger(ManagerClass):
         try:
             s_time = time.time()
 
-            self.data[subject_code][chart_type][time_unit][const.현재가].append(candle[const.현재가])
-            self.data[subject_code][chart_type][time_unit][const.시가].append(candle[const.시가])
-            self.data[subject_code][chart_type][time_unit][const.고가].append(candle[const.고가])
-            self.data[subject_code][chart_type][time_unit][const.저가].append(candle[const.저가])
-            self.data[subject_code][chart_type][time_unit][const.체결시간].append(candle[const.체결시간])
-            if '영업일자' in candle: self.data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
-            if '거래량' in candle: self.data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
-            self.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+            if const.MODE == const.REAL:
+                self.data[subject_code][chart_type][time_unit][const.현재가].append(candle[const.현재가])
+                self.data[subject_code][chart_type][time_unit][const.시가].append(candle[const.시가])
+                self.data[subject_code][chart_type][time_unit][const.고가].append(candle[const.고가])
+                self.data[subject_code][chart_type][time_unit][const.저가].append(candle[const.저가])
+                self.data[subject_code][chart_type][time_unit][const.체결시간].append(candle[const.체결시간])
+                if '영업일자' in candle: self.data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
+                if '거래량' in candle: self.data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
 
+            self.data[subject_code][chart_type][time_unit]['인덱스'] += 1
             self.calc(subject_code, chart_type, time_unit)
 
             self.running_time = self.running_time + (time.time() - s_time)
