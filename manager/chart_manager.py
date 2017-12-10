@@ -6,7 +6,6 @@ from constant import constant as const
 from utils import util
 from manager.__manager import ManagerClass
 
-common_data = {}
 class ChartManger(ManagerClass):
     
     data = {}
@@ -22,7 +21,7 @@ class ChartManger(ManagerClass):
         self.stv = stv
         self.sbv = sbv
 
-    def init_data(self, subject_code):
+    def init_data(self, subject_code, common_data = None):
         try:
             s_time = time.time()
 
@@ -40,7 +39,7 @@ class ChartManger(ManagerClass):
 
                         self.data[subject_code][chart_type][time_unit] = {}
 
-                        if const.MODE == const.REAL:
+                        if common_data is None:
                             self.data[subject_code][chart_type][time_unit][const.현재가] = []
                             self.data[subject_code][chart_type][time_unit][const.시가] = []
                             self.data[subject_code][chart_type][time_unit][const.고가] = []
@@ -49,7 +48,7 @@ class ChartManger(ManagerClass):
                             self.data[subject_code][chart_type][time_unit]['영업일자'] = []
                             self.data[subject_code][chart_type][time_unit]['거래량'] = []
                             self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
-                        elif const.MODE == const.TEST:
+                        else:
                             self.data[subject_code][chart_type][time_unit][const.현재가] = common_data[subject_code][chart_type][time_unit][const.현재가]
                             self.data[subject_code][chart_type][time_unit][const.시가] = common_data[subject_code][chart_type][time_unit][const.시가]
                             self.data[subject_code][chart_type][time_unit][const.고가] = common_data[subject_code][chart_type][time_unit][const.고가]
@@ -135,14 +134,13 @@ class ChartManger(ManagerClass):
         try:
             s_time = time.time()
 
-            if const.MODE == const.REAL:
-                self.data[subject_code][chart_type][time_unit][const.현재가].append(candle[const.현재가])
-                self.data[subject_code][chart_type][time_unit][const.시가].append(candle[const.시가])
-                self.data[subject_code][chart_type][time_unit][const.고가].append(candle[const.고가])
-                self.data[subject_code][chart_type][time_unit][const.저가].append(candle[const.저가])
-                self.data[subject_code][chart_type][time_unit][const.체결시간].append(candle[const.체결시간])
-                if '영업일자' in candle: self.data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
-                if '거래량' in candle: self.data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
+            self.data[subject_code][chart_type][time_unit][const.현재가].append(candle[const.현재가])
+            self.data[subject_code][chart_type][time_unit][const.시가].append(candle[const.시가])
+            self.data[subject_code][chart_type][time_unit][const.고가].append(candle[const.고가])
+            self.data[subject_code][chart_type][time_unit][const.저가].append(candle[const.저가])
+            self.data[subject_code][chart_type][time_unit][const.체결시간].append(candle[const.체결시간])
+            if '영업일자' in candle: self.data[subject_code][chart_type][time_unit]['영업일자'].append(candle['영업일자'])
+            if '거래량' in candle: self.data[subject_code][chart_type][time_unit]['거래량'].append(candle['거래량'])
 
             self.data[subject_code][chart_type][time_unit]['인덱스'] += 1
             self.calc(subject_code, chart_type, time_unit)

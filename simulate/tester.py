@@ -27,33 +27,40 @@ class Tester:
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
         self.sbv = subject.Subject()
 
-    def simulate(self, stv, result):
-        record = {}
-        profit = 0
+    def simulate(self, stv):
+        common_data = []
+        result = []
+        try:
+            print('%s simulate start.' % os.getpid())
+            record = {}
+            profit = 0
 
-        kiwoom_tester = KiwoomTester(stv)
-        for subject_code in ctm.common_data.keys():
-            log = kiwoom_tester.log
-            kiwoom_tester.chart.init_data(subject_code)
+            kiwoom_tester = KiwoomTester(stv)
+            for subject_code in common_data.keys():
+                log = kiwoom_tester.log
+                kiwoom_tester.chart.init_data(subject_code, common_data)
 
-            stv_info = kiwoom_tester.stv.info
-            sbv_info = kiwoom_tester.subject_var.info
-            chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-            time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
-            for candle in ctm.common_data[subject_code][chart_type][time_unit]:
-                kiwoom_tester.chart.push(subject_code, chart_type, time_unit, candle)
+                stv_info = kiwoom_tester.stv.info
+                sbv_info = kiwoom_tester.subject_var.info
+                chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
+                time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
+                for i in range(0, len(common_data[subject_code][chart_type][time_unit])):
+                    kiwoom_tester.chart.calc(subject_code, chart_type, 60)
+                    kiwoom_tester.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+                    print('process id : %s, candle index : %s' % (os.getpid(), i))
+                    order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
 
-                order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
+                    if order_info[신규매매]:
+                        kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
 
-                if order_info[신규매매]:
-                    kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
+                profit = profit + kiwoom_tester.누적수익
 
-            profit = profit + kiwoom_tester.누적수익
+            record['전략변수'] = kiwoom_tester.stv
+            record['누적수익'] = kiwoom_tester.누적수익
 
-        record['전략변수'] = kiwoom_tester.stv
-        record['누적수익'] = kiwoom_tester.누적수익
-
-        result.append(record)
+            result.append(record)
+        except Exception as err:
+            print(err)
 
     def proc(self):
         global running_time
@@ -119,6 +126,8 @@ class Tester:
             '''
 
             with mp.Manager() as manager:
+                result = manager.list()
+                common_data = manager.dict()
                 while True:
                     # self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                     # data[subject_code] -> ctm.common_data에 setting
@@ -138,45 +147,46 @@ class Tester:
                     stv = self.calc_strategy_var(cur_table)
 
                     # 차트 수신
-                    if chart.common_data == {}:
+                    if common_data == {}:
                         for subject_code in tables:
-                            chart.common_data[subject_code] = {}
+                            common_data[subject_code] = {}
                             for strategy in stv.info[subject_symbol]:
                                 for chart_config in stv.info[subject_symbol][strategy][차트]:
                                     self.log.info('chart config : %s' % chart_config)
-                                    if chart_config[0] not in chart.common_data[subject_code]:
-                                        chart.common_data[subject_code][chart_config[0]] = {}
-                                    if chart_config[1] not in chart.common_data[subject_code][chart_config[0]]:
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]] = {}
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
-                                        chart.common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
+                                    if chart_config[0] not in common_data[subject_code]:
+                                        common_data[subject_code][chart_config[0]] = {}
+                                    if chart_config[1] not in common_data[subject_code][chart_config[0]]:
+                                        common_data[subject_code][chart_config[0]][chart_config[1]] = {}
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
                                         data[subject_code] = dbm.request_tick_candle(subject_code, chart_config[1])
                                         for candle in data[subject_code]:
-                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][
+                                            common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 현재가].append(candle[현재가])
-                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][
+                                            common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 고가].append(candle[고가])
-                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][
+                                            common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 저가].append(candle[저가])
-                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][
+                                            common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 시가].append(candle[시가])
-                                            chart.common_data[subject_code][chart_config[0]][chart_config[1]][
+                                            common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 체결시간].append(candle[체결시간])
 
-                    print(chart.common_data)
+                    print(common_data)
                     print(stv.info)
 
                     while True:
                         stv = self.calc_strategy_var(cur_table)
-                        self.result = manager.list()
+
                         ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
-                        process = mp.Process(target=self.simulate, args=(stv, self.result, ))
+                        process = mp.Process(target=self.simulate, args=(stv, ))
                         procs.append(process)
                         process.start()
 
+                        break
                         if self.increase_the_number_of_digits(stv_table, cur_table) == False: break
 
                     for process in procs:
@@ -187,9 +197,9 @@ class Tester:
                     ''' 이 부분에 result를 수익별로 sorting '''
 
                     ''' 상위 N개의 결과 보여 줌 '''
-                    print(len(self.result))
-                    for i in range(0, min(len(self.result), 10)):
-                        self.log.info(self.result[i]) # 더 디테일하게 변경
+                    print(len(result))
+                    for i in range(0, min(len(result), 10)):
+                        self.log.info(result[i]) # 더 디테일하게 변경
 
                     self.log.info("해당 코드의 Git Hash : %s" % label)
                     while True:
