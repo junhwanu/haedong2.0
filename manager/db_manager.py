@@ -81,7 +81,7 @@ class DBManager(__manager.ManagerClass):
     def get_name(self):
         return str(self.__class__.__name__)
 
-    def request_tick_candle(self, subject_code, tick_unit):
+    def request_tick_candle(self, subject_code, tick_unit, start_date='20170101', end_date='20201231'):
         query = '''
         select t1.id
              , t1.date
@@ -106,6 +106,8 @@ class DBManager(__manager.ManagerClass):
                                     select @rownum:=0
                                       from dual
                                     ) s2
+                        
+                        where s1.date between Date('%s-%s-%s') and Date('%s-%s-%s')
                        ) result
                  group by Floor((result.row-1) / '%s')
                ) t1
@@ -114,7 +116,7 @@ class DBManager(__manager.ManagerClass):
          inner join %s t3
             on t1.max_id = t3.id
         ;
-        ''' % (tick_unit, subject_code, tick_unit, subject_code, subject_code)
+        ''' % (tick_unit, subject_code, start_date[:4], start_date[4:6], start_date[6:], end_date[:4], end_date[4:6], end_date[6:], tick_unit, subject_code, subject_code)
 
         return self.exec_query(query, fetch_type=FETCH_ALL, cursor_type=CURSOR_DICT)
 
