@@ -29,6 +29,7 @@ class Tester:
 
     def simulate(self, stv):
         common_data = []
+        print(stv)
         result = []
         try:
             print('%s simulate start.' % os.getpid())
@@ -111,7 +112,8 @@ class Tester:
             for table_name in tables:
                 data[table_name] = []
                 self.log.info('%s 월물 테이블 내용 수신 시작.' % table_name)
-                data[table_name] = dbm.request_tick_candle(table_name, '60')
+                data[table_name] = dbm.request_tick_candle(table_name, '60', start_date, end_date)
+                print(data[table_name])
                 '''
                 TODO:
                 현재 1가지 차트로만 고정 추후 여러 차트 가능하게 확장 예정
@@ -127,7 +129,7 @@ class Tester:
 
             with mp.Manager() as manager:
                 result = manager.list()
-                common_data = manager.dict()
+                common_data = {}
                 while True:
                     # self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                     # data[subject_code] -> ctm.common_data에 setting
@@ -146,16 +148,21 @@ class Tester:
 
                     stv = self.calc_strategy_var(cur_table)
 
+                    print(tables)
+                    print(common_data)
                     # 차트 수신
-                    if common_data == {}:
+                    if len(common_data.keys()) == 0:
                         for subject_code in tables:
                             common_data[subject_code] = {}
                             for strategy in stv.info[subject_symbol]:
                                 for chart_config in stv.info[subject_symbol][strategy][차트]:
                                     self.log.info('chart config : %s' % chart_config)
-                                    if chart_config[0] not in common_data[subject_code]:
+                                    print('subject_code : %s' % subject_code)
+                                    if chart_config[0] not in common_data[subject_code].keys():
                                         common_data[subject_code][chart_config[0]] = {}
-                                    if chart_config[1] not in common_data[subject_code][chart_config[0]]:
+                                        print(common_data)
+                                    if chart_config[1] not in common_data[subject_code][chart_config[0]].keys():
+                                        print(common_data)
                                         common_data[subject_code][chart_config[0]][chart_config[1]] = {}
                                         common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
                                         common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
@@ -182,7 +189,7 @@ class Tester:
                         stv = self.calc_strategy_var(cur_table)
 
                         ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
-                        process = mp.Process(target=self.simulate, args=(stv, ))
+                        process = mp.Process(target=self.simulate, args=(common_data, ))
                         procs.append(process)
                         process.start()
 
