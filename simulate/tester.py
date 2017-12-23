@@ -15,6 +15,48 @@ from manager.db_manager import *
 from manager.log_manager import LogManager
 
 
+def simulate(stv, common_data):
+    result = []
+    try:
+        print('%s simulate start.' % os.getpid())
+        print('common_data keys() : %s' % common_data.keys())
+        for key1 in common_data.keys():
+            for key2 in common_data[key1].keys():
+                for key3 in common_data[key1][key2].keys():
+                    for key4 in common_data[key1][key2][key3].keys():
+                        for key5 in common_data[key1][key2][key3][key4]:
+                            print(key5)
+
+        record = {}
+        profit = 0
+
+        kiwoom_tester = KiwoomTester(stv)
+        for subject_code in common_data.keys():
+            log = kiwoom_tester.log
+            kiwoom_tester.chart.init_data(subject_code, common_data)
+
+            stv_info = kiwoom_tester.stv.info
+            sbv_info = kiwoom_tester.subject_var.info
+            chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
+            time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
+            for i in range(0, len(common_data[subject_code][chart_type][time_unit])):
+                kiwoom_tester.chart.calc(subject_code, chart_type, 60)
+                kiwoom_tester.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+                print('process id : %s, candle index : %s' % (os.getpid(), i))
+                order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
+
+                if order_info[신규매매]:
+                    kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
+
+            profit = profit + kiwoom_tester.누적수익
+
+        record['전략변수'] = kiwoom_tester.stv
+        record['누적수익'] = kiwoom_tester.누적수익
+
+        result.append(record)
+    except Exception as err:
+        print(err)
+
 class Tester:
     running_time = 0
     result = []
@@ -27,41 +69,9 @@ class Tester:
         self.log, self.res, self.err_log = LogManager.__call__().get_logger()
         self.sbv = subject.Subject()
 
-    def simulate(self, stv):
-        common_data = []
-        print(stv)
-        result = []
-        try:
-            print('%s simulate start.' % os.getpid())
-            record = {}
-            profit = 0
-
-            kiwoom_tester = KiwoomTester(stv)
-            for subject_code in common_data.keys():
-                log = kiwoom_tester.log
-                kiwoom_tester.chart.init_data(subject_code, common_data)
-
-                stv_info = kiwoom_tester.stv.info
-                sbv_info = kiwoom_tester.subject_var.info
-                chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-                time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
-                for i in range(0, len(common_data[subject_code][chart_type][time_unit])):
-                    kiwoom_tester.chart.calc(subject_code, chart_type, 60)
-                    kiwoom_tester.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
-                    print('process id : %s, candle index : %s' % (os.getpid(), i))
-                    order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
-
-                    if order_info[신규매매]:
-                        kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
-
-                profit = profit + kiwoom_tester.누적수익
-
-            record['전략변수'] = kiwoom_tester.stv
-            record['누적수익'] = kiwoom_tester.누적수익
-
-            result.append(record)
-        except Exception as err:
-            print(err)
+    def print(self):
+        for i in range(0, 10):
+            print(i)
 
     def proc(self):
         global running_time
@@ -96,8 +106,7 @@ class Tester:
             return
 
         '''
-        입력 종료
-        '''
+        입력 종료        '''
 
         try:
             ''' 해당 종목 테이블 가져옴 '''
@@ -129,7 +138,7 @@ class Tester:
 
             with mp.Manager() as manager:
                 result = manager.list()
-                common_data = {}
+                common_data = manager.dict()
                 while True:
                     # self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                     # data[subject_code] -> ctm.common_data에 setting
@@ -148,29 +157,27 @@ class Tester:
 
                     stv = self.calc_strategy_var(cur_table)
 
-                    print(tables)
-                    print(common_data)
+                    self.log.info("tables data : %s" % tables)
+                    self.log.info("common data : %s" % common_data)
                     # 차트 수신
                     if len(common_data.keys()) == 0:
                         for subject_code in tables:
-                            common_data[subject_code] = {}
+                            common_data[subject_code] = manager.dict()
                             for strategy in stv.info[subject_symbol]:
                                 for chart_config in stv.info[subject_symbol][strategy][차트]:
                                     self.log.info('chart config : %s' % chart_config)
-                                    print('subject_code : %s' % subject_code)
+                                    self.log.info('subject_code : %s' % subject_code)
                                     if chart_config[0] not in common_data[subject_code].keys():
-                                        common_data[subject_code][chart_config[0]] = {}
-                                        print(common_data)
+                                        common_data[subject_code][chart_config[0]] = manager.dict()
                                     if chart_config[1] not in common_data[subject_code][chart_config[0]].keys():
-                                        print(common_data)
-                                        common_data[subject_code][chart_config[0]][chart_config[1]] = {}
-                                        common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = []
-                                        common_data[subject_code][chart_config[0]][chart_config[1]][고가] = []
-                                        common_data[subject_code][chart_config[0]][chart_config[1]][저가] = []
-                                        common_data[subject_code][chart_config[0]][chart_config[1]][시가] = []
-                                        common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = []
-                                        data[subject_code] = dbm.request_tick_candle(subject_code, chart_config[1])
-                                        for candle in data[subject_code]:
+                                        common_data[subject_code][chart_config[0]][chart_config[1]] = manager.dict()
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][현재가] = manager.list()
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][고가] = manager.list()
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][저가] = manager.list()
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][시가] = manager.list()
+                                        common_data[subject_code][chart_config[0]][chart_config[1]][체결시간] = manager.list()
+                                        #data[subject_code] = dbm.request_tick_candle(subject_code, chart_config[1])
+                                        for candle in data[subject_code][:100]:
                                             common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 현재가].append(candle[현재가])
                                             common_data[subject_code][chart_config[0]][chart_config[1]][
@@ -181,15 +188,14 @@ class Tester:
                                                 시가].append(candle[시가])
                                             common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 체결시간].append(candle[체결시간])
+                                            #self.log.info("candle append.")
 
-                    print(common_data)
-                    print(stv.info)
-
+                    self.log.info("common data : %s" % common_data)
                     while True:
                         stv = self.calc_strategy_var(cur_table)
 
                         ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
-                        process = mp.Process(target=self.simulate, args=(common_data, ))
+                        process = mp.Process(target=simulate, args=(stv, common_data, ))
                         procs.append(process)
                         process.start()
 

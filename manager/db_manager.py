@@ -31,6 +31,7 @@ class DBManager(__manager.ManagerClass):
 
         result = self.curs.execute(query)
         self.conn.commit()
+        print(query)
 
         if fetch_type == FETCH_ONE:
             return self.curs.fetchone()
