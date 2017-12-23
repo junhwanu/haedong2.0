@@ -24,8 +24,8 @@ def simulate(stv, common_data):
             for key2 in common_data[key1].keys():
                 for key3 in common_data[key1][key2].keys():
                     for key4 in common_data[key1][key2][key3].keys():
-                        for key5 in common_data[key1][key2][key3][key4]:
-                            print(key5)
+                        for data in common_data[key1][key2][key3][key4]:
+                            print(data)
 
         record = {}
         profit = 0
