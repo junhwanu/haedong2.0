@@ -82,6 +82,30 @@ class DBManager(__manager.ManagerClass):
     def get_name(self):
         return str(self.__class__.__name__)
 
+    def request_day_candle(self, subject_code, days, start_date='20170101', end_date='20201231'):
+        return self.request_min_candle(subject_code, 1440*days, start_date, end_date)
+
+    def request_hour_candle(self, subject_code, hours, start_date='20170101', end_date='20201231'):
+        return self.request_min_candle(subject_code, 60*hours, start_date, end_date)
+
+    def request_min_candle(self, subject_code, minutes, start_date='20170101', end_date='20201231'):
+        sec = minutes * 60
+        query = '''
+        SELECT
+          from_unixtime(FLOOR(UNIX_TIMESTAMP(date) / %s) * %s) AS date,
+          SUM(volume) AS volume,
+          SUBSTRING_INDEX(MIN(CONCAT(`date`, '_', price)), '_', -1) AS open,
+          MAX(price) AS high,
+          MIN(price) AS low,
+          SUBSTRING_INDEX(MAX(CONCAT(`date`, '_', price)), '_', -1) AS close
+        FROM %s
+        WHERE date between timestamp('%s000000') and timestamp('%s235959')
+        GROUP BY FLOOR(UNIX_TIMESTAMP(date)/%s)
+        ORDER BY date
+        ''' % (sec, sec, subject_code, start_date, end_date, sec)
+
+        return self.exec_query(query, fetch_type=FETCH_ALL, cursor_type=CURSOR_DICT)
+
     def request_tick_candle(self, subject_code, tick_unit, start_date='20170101', end_date='20201231'):
         query = '''
         select t1.id
