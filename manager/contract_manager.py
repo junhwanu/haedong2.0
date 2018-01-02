@@ -139,7 +139,6 @@ class ContractManager(ManagerClass):
         except Exception as err:
             self.err_log.error(util.get_error_msg(err))
 
-    @staticmethod
     def get_contract_count(self, subject_code):
         try:
             if subject_code not in self.contract_list:
@@ -155,7 +154,6 @@ class ContractManager(ManagerClass):
 
         return self.contract_list[subject_code]
 
-    @staticmethod
     def get_loss_cut(strategy):
         # return [익절가], [손절가]
         if strategy == const.파라:

@@ -21,10 +21,13 @@ class ChartManger(ManagerClass):
         self.stv = stv
         self.sbv = sbv
 
+
     def init_data(self, subject_code, common_data = None):
         try:
             s_time = time.time()
-
+            subject_symbol = subject_code[:2]
+            self.stv.info[subject_code] = self.stv.info[subject_symbol]
+            self.sbv.info[subject_code] = self.sbv.info[subject_symbol]
             self.data[subject_code] = {}
             self.data[subject_code]['상태'] = '대기'
 
@@ -54,7 +57,9 @@ class ChartManger(ManagerClass):
                             self.data[subject_code][chart_type][time_unit][const.고가] = common_data[subject_code][chart_type][time_unit][const.고가]
                             self.data[subject_code][chart_type][time_unit][const.저가] = common_data[subject_code][chart_type][time_unit][const.저가]
                             self.data[subject_code][chart_type][time_unit][const.체결시간] = common_data[subject_code][chart_type][time_unit][const.체결시간]
-                            self.data[subject_code][chart_type][time_unit]['인덱스'] = 0
+                            self.data[subject_code][chart_type][time_unit]['영업일자'] = []
+                            self.data[subject_code][chart_type][time_unit]['거래량'] = []
+                            self.data[subject_code][chart_type][time_unit]['인덱스'] = -1
 
                         self.data[subject_code][chart_type][time_unit]['현재가변동횟수'] = 0
                         self.data[subject_code][chart_type][time_unit]['현재캔들'] = {}
@@ -297,13 +302,13 @@ class ChartManger(ManagerClass):
         self.calc_sar(subject_code, chart_type, time_unit)
 
     def calc_sar(self, subject_code, chart_type, time_unit):
-        sar = self.data[subject_code][chart_type][time_unit]['SAR'][-1]
+        index = self.data[subject_code][chart_type][time_unit]['인덱스']
+        sar = self.data[subject_code][chart_type][time_unit]['SAR'][index]
         ep = self.data[subject_code][chart_type][time_unit]['EP']
-        temp_flow = self.data[subject_code][chart_type][time_unit]['플로우'][-1]
+        temp_flow = self.data[subject_code][chart_type][time_unit]['플로우'][index]
         af = self.data[subject_code][chart_type][time_unit]['AF']
         init_af = self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.INIT_AF]
         max_af = self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.MAX_AF]
-        index = self.data[subject_code][chart_type][time_unit]['인덱스']
         temp_sar = sar
 
         the_highest_price = 0
@@ -337,7 +342,7 @@ class ChartManger(ManagerClass):
 
                 ep = the_lowest_price
                 self.log.info("%s, %s, %s : 하향 반전, 시간 : %s" % (
-                    subject_code, chart_type, time_unit, self.data[subject_code][chart_type][time_unit][const.체결시간][-1]))
+                    subject_code, chart_type, time_unit, self.data[subject_code][chart_type][time_unit][const.체결시간][index]))
 
                 flow_result = {}
                 flow_result['추세'] = const.상향
@@ -345,7 +350,7 @@ class ChartManger(ManagerClass):
                 if len(self.data[subject_code][chart_type][time_unit]['지난플로우']) == 0:
                     flow_result['시작SAR'] = 0
                 else:
-                    flow_result['시작SAR'] = self.data[subject_code][chart_type][time_unit]['지난플로우'][-1]['마지막SAR']
+                    flow_result['시작SAR'] = self.data[subject_code][chart_type][time_unit]['지난플로우'][index]['마지막SAR']
 
                     self.data[subject_code][chart_type][time_unit]['지난플로우'].append(flow_result)
 
@@ -370,7 +375,7 @@ class ChartManger(ManagerClass):
 
                 ep = the_highest_price
                 self.log.info("%s, %s, %s : 상향 반전, 시간 : %s" % (
-                    subject_code, chart_type, time_unit, self.data[subject_code][chart_type][time_unit][const.체결시간][-1]))
+                    subject_code, chart_type, time_unit, self.data[subject_code][chart_type][time_unit][const.체결시간][index]))
 
                 flow_result = {}
                 flow_result['추세'] = const.하향
@@ -378,7 +383,7 @@ class ChartManger(ManagerClass):
                 if len(self.data[subject_code][chart_type][time_unit]['지난플로우']) == 0:
                     flow_result['시작SAR'] = 0
                 else:
-                    flow_result['시작SAR'] = self.data[subject_code][chart_type][time_unit]['지난플로우'][-1]['마지막SAR']
+                    flow_result['시작SAR'] = self.data[subject_code][chart_type][time_unit]['지난플로우'][index]['마지막SAR']
 
                     self.data[subject_code][chart_type][time_unit]['지난플로우'].append(flow_result)
 

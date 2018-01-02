@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from manager import chart_manager as ctm, strategy_manager as stm
+from manager import chart_manager as ctm, strategy_manager as stm, contract_manager as cm
 from modules import __module
 from var import subject
 from constant import constant as const
@@ -9,14 +9,20 @@ from modules.__module import ModuleClass
 class KiwoomTester(__module.ModuleClass):
     chart = None
     stv = None
+    ctm = cm.ContractManager()
+
     누적수익 = 0
 
-    def __init__(self, _stv = None):
+    def __init__(self, stv, common_data):
         super(KiwoomTester, self).__init__()
-        self.stv = _stv
+        self.stv = stv
         self.chart = ctm.ChartManger(self.stv, subject.Subject())
         self.stm = stm.StrategyManager(subject.Subject())
         self.subject_var = subject.Subject()
+        self.cm = cm.ContractManager()
+
+        for subject_code in common_data.keys():
+            self.chart.init_data(subject_code, common_data)
 
 
     def get_name(self):
@@ -46,26 +52,41 @@ class KiwoomTester(__module.ModuleClass):
         from math import floor
         차트 = self.chart.data[종목코드][차트타입][시간단위]
 
+        if 인덱스 < 500: return const.false
+
         sar = 차트['SAR'][-1]
         플로우 = 차트['플로우'][-1]
         자릿수 = self.subject_var.info[종목코드]['자릿수'] # 금의 경우 1
         단위 = self.subject_var.info[종목코드]['단위']     # 금의 경우 0.1
 
-        if ctm().get_contract_count(종목코드) > 0: #계약을 가지고 있을때
-            if 플로우 == const.상향:
-                if 차트[const.저가] < sar: # 하향 반전 됨
-                    return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수))
-
-            elif 플로우 == const.하향:
-                if 차트[const.고가] >= sar: # 상향 반전 됨
-                    return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수) + 단위)
-
-        else: # 계약을 가지고 있지 않을 때
-            if 플로우 == const.상향:
-                if 차트[const.저가] < sar: # 하향 반전 됨
-                    return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수))
-
-            elif 플로우 == const.하향:
-                if 차트[const.고가] >= sar:
-                    return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수) + 단위)
+        self.log.info("인덱스 : %s, SAR : %s" % (인덱스, sar))
+        # if self.cm.get_contract_count(종목코드) > 0: #계약을 가지고 있을때
+        #     if 플로우 == const.상향:
+        #         if 차트[const.저가] < sar: # 하향 반전 됨
+        #             return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수))
+        #
+        #     elif 플로우 == const.하향:
+        #         if 차트[const.고가] >= sar: # 상향 반전 됨
+        #             return self.stm.get_strategy(종목코드).is_it_sell(종목코드, round(sar-(단위/2),자릿수) + 단위)
+        #
+        # else: # 계약을 가지고 있지 않을 때
+        #     if 플로우 == const.상향:
+        #         if 차트[const.저가] < sar: # 하향 반전 됨
+        #             return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수))
+        #
+        #     elif 플로우 == const.하향:
+        #         if 차트[const.고가] >= sar:
+        #             return self.stm.get_strategy(종목코드).is_it_ok(종목코드, round(sar-(단위/2),자릿수) + 단위)
         pass
+
+    def run(self, subject_code, chart_type, time_unit):
+        self.log.info(self.chart.data)
+
+        try:
+            # 이후 여러종목 동시테스트일 경우에는 캔들의 시간이 빠른순으로 넣어줘야함. 같은 종목도 차트타입과 시간단위도 마찬가지로 차트가 여러개일 경우엔
+            for i in range(0, len(self.chart.data[subject_code][chart_type][time_unit][const.현재가])):
+                self.check_contract_in_candle(subject_code, chart_type, time_unit, i)
+                self.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+                self.chart.calc(subject_code, chart_type, time_unit)
+        except Exception as err:
+            self.log.error(err)

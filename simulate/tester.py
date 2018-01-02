@@ -27,29 +27,40 @@ def simulate(stv, common_data, result):
 
         record = {}
         profit = 0
-        #
-        # kiwoom_tester = KiwoomTester(stv)
-        # for subject_code in common_data.keys():
-        #     log = kiwoom_tester.log
-        #     kiwoom_tester.chart.init_data(subject_code, common_data)
-        #
-        #     stv_info = kiwoom_tester.stv.info
-        #     sbv_info = kiwoom_tester.subject_var.info
-        #     chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
-        #     time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
-        #     for i in range(0, len(common_data[subject_code][chart_type][time_unit])):
-        #         kiwoom_tester.chart.calc(subject_code, chart_type, 60)
-        #         kiwoom_tester.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
-        #         print('process id : %s, candle index : %s' % (os.getpid(), i))
-        #         order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
-        #
-        #         if order_info[신규매매]:
-        #             kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
-        #
-        #     profit = profit + kiwoom_tester.누적수익
 
-        # record['전략변수'] = kiwoom_tester.stv
-        # record['누적수익'] = kiwoom_tester.누적수익
+        kiwoom_tester = KiwoomTester(stv, common_data)
+
+        for subject_code in common_data.keys():
+            log = kiwoom_tester.log
+            log.info("pid : %s 시작" % os.getpid())
+            stv_info = kiwoom_tester.stv.info
+            sbv_info = kiwoom_tester.subject_var.info
+            log.info("pid : %s, stv : %s" %(os.getpid(), stv_info))
+            chart_type = stv_info[subject_code][sbv_info[subject_code][const.전략]][차트][0][0]
+            time_unit = stv_info[subject_code][sbv_info[subject_code][const.전략]][차트][0][1]
+
+            log.info('pid : %s, 차트타입 : %s, 시간단위 : %s' % (os.getpid(), chart_type, time_unit))
+            kiwoom_tester.run(subject_code, chart_type, time_unit)
+            # log = kiwoom_tester.log
+            # kiwoom_tester.chart.init_data(subject_code, common_data)
+            #
+            # stv_info = kiwoom_tester.stv.info
+            # sbv_info = kiwoom_tester.subject_var.info
+            # chart_type = stv_info[subject_code][sbv_info[subject_code]][차트][0][0]
+            # time_unit = stv_info[subject_code][sbv_info[subject_code]][차트][0][1]
+            # for i in range(0, len(common_data[subject_code][chart_type][time_unit])):
+            #     kiwoom_tester.chart.calc(subject_code, chart_type, 60)
+            #     kiwoom_tester.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+            #     print('process id : %s, candle index : %s' % (os.getpid(), i))
+            #     order_info = kiwoom_tester.check_contract_in_candle(subject_code, chart_type, time_unit)
+            #
+            #     if order_info[신규매매]:
+            #         kiwoom_tester.send_order(order_info[매도수구분], subject_code, order_info[수량])
+            #
+            # profit = profit + kiwoom_tester.누적수익
+
+        record['전략변수'] = kiwoom_tester.stv
+        record['누적수익'] = kiwoom_tester.누적수익
 
         record['전략변수'] = os.getpid()
         record['누적수익'] = os.getpid()
@@ -58,7 +69,7 @@ def simulate(stv, common_data, result):
         print(result)
 
     except Exception as err:
-        print(err)
+        log.error(err)
 
 class Tester:
     running_time = 0
@@ -304,9 +315,24 @@ class Tester:
 
             data = {}
             for table_name in tables:
-                data[table_name] = []
+                data[table_name] = {}
+                data[table_name][const.틱차트] = {}
+                data[table_name][const.틱차트]['60'] = {}
+                data[table_name][const.틱차트]['60'][const.체결시간] = []
+                data[table_name][const.틱차트]['60'][const.시가] = []
+                data[table_name][const.틱차트]['60'][const.고가] = []
+                data[table_name][const.틱차트]['60'][const.저가] = []
+                data[table_name][const.틱차트]['60'][const.현재가] = []
                 self.log.info('%s 월물 테이블 내용 수신 시작.' % table_name)
-                data[table_name] = dbm.request_tick_candle(table_name, '60', start_date, end_date)
+                temp = dbm.request_tick_candle(table_name, '60', start_date, end_date)
+
+                for candle in temp:
+                    data[table_name][const.틱차트]['60'][const.체결시간].append(candle[const.체결시간])
+                    data[table_name][const.틱차트]['60'][const.시가].append(candle[const.시가])
+                    data[table_name][const.틱차트]['60'][const.고가].append(candle[const.고가])
+                    data[table_name][const.틱차트]['60'][const.저가].append(candle[const.저가])
+                    data[table_name][const.틱차트]['60'][const.현재가].append(candle[const.현재가])
+
                 print(data[table_name])
                 '''
                 TODO:
@@ -323,7 +349,8 @@ class Tester:
 
             with mp.Manager() as manager:
                 result = manager.list()
-                common_data = manager.dict()
+                common_data = manager.dict(data)
+
                 while True:
                     # self.log.info("DB 데이터를 설정된 차트에 맞는 캔들 데이터로 변환합니다.")
                     # data[subject_code] -> ctm.common_data에 setting
@@ -377,7 +404,7 @@ class Tester:
                                             common_data[subject_code][chart_config[0]][chart_config[1]][
                                                 체결시간].append(candle[체결시간])
 
-                    for i in range(0, 20):
+                    for i in range(0, 2):
                         stv = self.calc_strategy_var(cur_table)
 
                         ''' 해당 부분에서 Multiprocessing으로 테스트 시작 '''
