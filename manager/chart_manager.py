@@ -2,7 +2,7 @@
 import time
 
 from constant import constant as const
-# from var import subject, strategy_var as st
+# from var import subject, strategy_var as stv
 from utils import util
 from manager.__manager import ManagerClass
 

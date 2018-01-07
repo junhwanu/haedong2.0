@@ -96,8 +96,7 @@ class ContractManager(ManagerClass):
                             c['손절가'] = c['체결가'] - order_info['손절틱'][i] * \
                                                   self.sbv.info[subject_code]['단위']
 
-                    self.log.info('신규계약 추가, 종목코드 : ' + subject_code + ', 목표달성청산수량 ' + str(safe_num) + '개, 드리블수량 ' + str(
-                        dribble_num) + '개 추가.')
+                    self.log.info('신규계약 추가, 종목코드 : ' + subject_code + ', 목표달성청산수량 ' + str(safe_num) + '개, 드리블수량 ' + str(dribble_num) + '개 추가.')
 
         except Exception as err:
             self.err_log.error(util.get_error_msg(err))

@@ -5,7 +5,7 @@ from constant.constant import *
 
 class Subject():
     info = {
-        "GC" : {
+        "GCZ17" : {
             "종목명": "GOLD",
             "단위": 0.1,
             "자릿수": 1,

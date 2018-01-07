@@ -6,77 +6,77 @@ from constant import constant as const
 from utils import util
 
 
-class Para(__base_strategy.BaseStrategy):
+# class Para(__base_strategy.BaseStrategy):
+class Para():
     running_time = 0
     
-    def __init__(self):
-        pass
+    def __init__(self, stv, sbv, chart):
+        self.stv = stv
+        self.sbv = sbv
+        self.chart = chart
+
     
-#     def __init__(self, chart, stv, sbv):
-#         self.chart = chart
-#         self.stv = stv
-#         self.sbv = sbv
-    
-    def is_it_ok(self, chart, subject_code, current_price):
+    def is_it_ok(self, subject_code, current_price):
+        print("23123123123123123123")
         global running_time
         s_time = time.time()
-        try:
-            차트 = self.get_chart(subject_code) # 이거 왜 쓴거임?
-    
-            ''' 차트 미생성 '''
-            for chart_config in self.stv.info[subject_code][const.파라][차트]:
-                chart_type = chart_config[0]
-                time_unit = chart_config[1]
-    
-                if chart().data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.초기캔들수]:
-                    running_time = running_time + (time.time() - s_time)
-                    return const.false
-    
-    
-            ''' 매매 불가 상태'''
-            if chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중' \
-                    or chart.data[subject_code]['상태'] == '매매시도중' or chart.data[subject_code]['상태'] == '청산시도중':
+        #try:
+        차트 = self.get_chart(self.chart, subject_code) # 이거 왜 쓴거임?
+
+        ''' 차트 미생성 '''
+        for chart_config in self.stv.info[subject_code][const.파라][차트]:
+            chart_type = chart_config[0]
+            time_unit = chart_config[1]
+
+            if self.chart.data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.초기캔들수]:
                 running_time = running_time + (time.time() - s_time)
                 return const.false
-    
-            매도수구분 = self.get_mesu_medo_type(subject_code, current_price, 차트[0])
-    
-            if not (매도수구분 == const.매수 or 매도수구분 == const.매도):
-                running_time = running_time + (time.time() - s_time)
-                return const.false
-    
-            ''' 매매 가능으로 변경 '''
-            #if chart.data[subject_code]['상태'] == '대기':  chart.data[subject_code]['상태'] = '매매가능'
-    
-            ''' 매매 불가 시간 '''
-            if 2100 < util.get_time(0,subject_code) < 2230:
-                running_time = running_time + (time.time() - s_time)
-                return const.false
-    
-            수량 = self.get_buy_count(subject_code, current_price)
-    
-            order_contents = {'신규주문': True, '매도수구분': 매도수구분, '수량': 수량}
-    
-            running_time = running_time + (time.time() - s_time)
-            return order_contents
-        except Exception as err:
-            self.err_log.error(util.get_error_msg(err))
-    
+
+
+        ''' 매매 불가 상태'''
+        if self.chart.data[subject_code]['상태'] == '매수중' or self.chart.data[subject_code]['상태'] == '매도중' \
+                or self.chart.data[subject_code]['상태'] == '매매시도중' or self.chart.data[subject_code]['상태'] == '청산시도중':
             running_time = running_time + (time.time() - s_time)
             return const.false
 
-    def is_it_sell(self, chart, cm, subject_code, current_price):
+        매도수구분 = self.get_mesu_medo_type(subject_code, current_price, 차트[0])
+
+        if not (매도수구분 == const.매수 or 매도수구분 == const.매도):
+            running_time = running_time + (time.time() - s_time)
+            return const.false
+
+        ''' 매매 가능으로 변경 '''
+        #if chart.data[subject_code]['상태'] == '대기':  chart.data[subject_code]['상태'] = '매매가능'
+
+        ''' 매매 불가 시간 '''
+        if 2100 < util.get_time(0,subject_code) < 2230:
+            running_time = running_time + (time.time() - s_time)
+            return const.false
+
+        수량 = self.get_buy_count(subject_code, current_price)
+
+        order_contents = {'신규주문': True, '매도수구분': 매도수구분, '수량': 수량}
+
+        running_time = running_time + (time.time() - s_time)
+        return order_contents
+        #except Exception as err:
+        #    self.err_log.error(util.get_error_msg(err))
+    
+        #running_time = running_time + (time.time() - s_time)
+        #return const.false
+
+    def is_it_sell(self, cm, subject_code, current_price):
         global running_time
     
         s_time = time.time()
         try:
-            if not (chart.data[subject_code]['상태'] == '매수중' or chart.data[subject_code]['상태'] == '매도중') :
+            if not (self.chart.data[subject_code]['상태'] == '매수중' or self.chart.data[subject_code]['상태'] == '매도중') :
                 running_time = running_time + (time.time() - s_time)
                 return const.false
             
-            차트 = self.get_chart(subject_code)
+            차트 = self.get_chart(self.chart, subject_code)
             계약 = cm.get_contract_list(subject_code)
-            매도수구분 = const.매매없음
+            #매도수구분 = const.매매없음
             수량 = 0
             보유수량 = cm.get_contract_count(subject_code)
             차트변수 = self.stv.info[subject_code][const.파라]['차트변수']
@@ -180,7 +180,7 @@ class Para(__base_strategy.BaseStrategy):
             지난플로우 = 차트['지난플로우'][-5:]
     
             i = 차트['인덱스']
-    
+
             if (현재플로우 == const.상향 and 차트['플로우'][-1] != 차트['플로우'][-2]) or \
                     (현재플로우 == const.하향 and 현재가 > 차트[const.현재SAR]):
                 매도수구분 = const.매수

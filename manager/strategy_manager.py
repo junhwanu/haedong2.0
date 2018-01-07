@@ -6,18 +6,22 @@ import os
 from constant import constant as const
 from strategy import para
 from utils import util
-from var import strategy_var
+from var import strategy_var as stv
+
 from manager.__manager import ManagerClass
 
 
 class StrategyManager(ManagerClass):
 
-    def __init__(self, sbv):
+    stv = stv.Strategy_Var()
+    strategys = {}
+    def __init__(self, stv, sbv, chart):
         super(StrategyManager, self).__init__()
         self.sbv = sbv
+        self.chart = chart
 
     def get_strategy_var_from_config(self):
-        stv = strategy_var.Strategy_Var()
+        stv = self.stv
         MODULE_PATH = os.path.dirname(os.path.abspath(__file__).replace('\\', '/'))
 
         try:
@@ -72,8 +76,15 @@ class StrategyManager(ManagerClass):
 
     def get_strategy(self, subject_code):
         strategy = None
+        stv = self.stv
+        sbv = self.sbv
+        chart = self.chart
+
         if self.sbv.info[subject_code][const.전략] == const.파라:
-            strategy = para.Para()
+            if const.파라 not in self.strategys.keys():
+                self.strategys[const.파라] = para.Para(stv, sbv, chart)
+                return self.strategys[const.파라]
+            else: return self.strategys[const.파라]
         else:
             self.err_log.error("전략 설정 에러.")
         return strategy
