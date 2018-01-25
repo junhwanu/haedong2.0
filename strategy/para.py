@@ -22,8 +22,6 @@ class Para(__base_strategy.BaseStrategy):
 
     
     def is_it_ok(self, subject_code, current_price):
-        print("23123123123123123123")
-        global running_time
         s_time = time.time()
         #try:
         temp_chart = self.get_chart(subject_code) # 이거 왜 쓴거임?
@@ -34,20 +32,20 @@ class Para(__base_strategy.BaseStrategy):
             time_unit = chart_config[1]
 
             if self.chart.data[subject_code][chart_type][time_unit]['인덱스'] < self.stv.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.초기캔들수]:
-                running_time = running_time + (time.time() - s_time)
+                self.running_time = self.running_time + (time.time() - s_time)
                 return const.false
 
 
         ''' 매매 불가 상태'''
         if self.chart.data[subject_code]['상태'] == '매수중' or self.chart.data[subject_code]['상태'] == '매도중' \
                 or self.chart.data[subject_code]['상태'] == '매매시도중' or self.chart.data[subject_code]['상태'] == '청산시도중':
-            running_time = running_time + (time.time() - s_time)
+            self.running_time = self.running_time + (time.time() - s_time)
             return const.false
 
         매도수구분 = self.get_mesu_medo_type(subject_code, current_price, temp_chart[0])
 
         if not (매도수구분 == const.매수 or 매도수구분 == const.매도):
-            running_time = running_time + (time.time() - s_time)
+            self.running_time = self.running_time + (time.time() - s_time)
             return const.false
 
         ''' 매매 가능으로 변경 '''
@@ -55,14 +53,14 @@ class Para(__base_strategy.BaseStrategy):
 
         ''' 매매 불가 시간 '''
         if 2100 < util.get_time(0,subject_code) < 2230:
-            running_time = running_time + (time.time() - s_time)
+            self.running_time = self.running_time + (time.time() - s_time)
             return const.false
 
         수량 = self.get_buy_count(subject_code, current_price)
 
         order_contents = {'신규주문': True, '매도수구분': 매도수구분, '수량': 수량}
 
-        running_time = running_time + (time.time() - s_time)
+        self.running_time = self.running_time + (time.time() - s_time)
         return order_contents
         #except Exception as err:
         #    self.err_log.error(util.get_error_msg(err))
@@ -71,12 +69,10 @@ class Para(__base_strategy.BaseStrategy):
         #return const.false
 
     def is_it_sell(self, cm, subject_code, current_price):
-        global running_time
-    
         s_time = time.time()
         try:
             if not (self.chart.data[subject_code]['상태'] == '매수중' or self.chart.data[subject_code]['상태'] == '매도중') :
-                running_time = running_time + (time.time() - s_time)
+                self.running_time = self.running_time + (time.time() - s_time)
                 return const.false
             
             차트 = self.get_chart(self.chart, subject_code)
@@ -157,12 +153,12 @@ class Para(__base_strategy.BaseStrategy):
             if 수량 is 0: return const.false
             order_info = {'신규주문':True, '매도수구분':매도수구분, '수량':수량}
     
-            running_time = running_time + (time.time() - s_time)
+            self.running_time = self.running_time + (time.time() - s_time)
             return order_info
         except Exception as err:
             self.err_log.error(util.get_error_msg(err))
     
-            running_time = running_time + (time.time() - s_time)
+            self.running_time = self.running_time + (time.time() - s_time)
             return const.false
 
     def get_chart(self, subject_code):

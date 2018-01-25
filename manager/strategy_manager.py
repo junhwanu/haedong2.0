@@ -16,7 +16,7 @@ class StrategyManager(__manager.ManagerClass):
     
     def __init__(self, stv, sbv, chart):
         super(StrategyManager, self).__init__()
-        print(stv.info)
+        self.stv = stv
         self.sbv = sbv
         self.chart = chart
 
