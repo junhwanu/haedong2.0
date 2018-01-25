@@ -6,15 +6,15 @@ import threading
 import time
 
 from PIL import Image
-import cv2
+import cv2  # @UnusedImport
 import psutil
 import pyautogui
 import pywinauto
 
-from modules.__module import ModuleClass
+from modules import __module
 
 
-class Login(ModuleClass, threading.Thread):
+class Login(__module.ModuleClass, threading.Thread):
     REAL_INVEST = False
     AUTO_LOGIN = True
 

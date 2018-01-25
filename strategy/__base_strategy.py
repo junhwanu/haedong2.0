@@ -41,7 +41,7 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #             return para.is_it_ok(subject_code, current_price)
         #         else:
         #             err_log.error('%s 종목, ?��?�� ?��?�� ?��?��' % subject_code)
-        #             return {'?��규주�?': False}
+        #             return {'?��규주�??': False}
         #
         #     except Exception as err:
         #         err_log.error(log_manager.get_error_msg(err))
@@ -52,14 +52,14 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #             return para.is_it_sell(subject_code, current_price)
         #         else:
         #             err_log.error('%s 종목, ?��?�� ?��?�� ?��?��' % subject_code)
-        #             return {'?��규주�?': False}
+        #             return {'?��규주�??': False}
         #
         #     except Exception as err:
         #         err_log.error(log_manager.get_error_msg(err))
 
         # def set_strategy_var(stv):
         #     try:
-        #         # ?��?�� �??�� Config 불러?���?
+        #         # ?��?�� �???�� Config 불러?���??
         #         config = configparser.RawConfigParser()
         #         config.read(CONFIG_PATH + '/strategy_var.cfg')
         #
@@ -73,13 +73,13 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #             stv.info[subject_symbol][strategy] = {}
         #
         #             stv.info[subject_symbol][strategy][차트] = []
-        #             stv.info[subject_symbol][strategy][차트�??��] = {}
-        #             stv.info[subject_symbol][strategy][차트�??��][?��차트] = {}
-        #             stv.info[subject_symbol][strategy][차트�??��][분차?��] = {}
+        #             stv.info[subject_symbol][strategy][차트�???��] = {}
+        #             stv.info[subject_symbol][strategy][차트�???��][?��차트] = {}
+        #             stv.info[subject_symbol][strategy][차트�???��][분차?��] = {}
         #
         #             if strategy == ?��?��:
-        #                 stv.info[subject_symbol][strategy][차트�??��][매매불�??��?��?��] = config.get(subject_symbol, 매매불�??��?��?��)
-        #                 stv.info[subject_symbol][strategy][차트�??��][�??��?��계별?��리블?��] = json.loads(config.get(subject_symbol, �??��?��계별?��리블?��))
+        #                 stv.info[subject_symbol][strategy][차트�???��][매매불�??��?��?��] = config.get(subject_symbol, 매매불�??��?��?��)
+        #                 stv.info[subject_symbol][strategy][차트�???��][�???��?��계별?��리블?��] = json.loads(config.get(subject_symbol, �???��?��계별?��리블?��))
         #
         #             ## subject_symbol?�� config 불러?��
         #             chart_types = json.loads(config.get(subject_symbol, CHART_TYPE))
@@ -89,13 +89,13 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #                 time_unit = chart_type.split('_')[1]
         #
         #                 section_str = subject_symbol + '_' + chart_type
-        #                 stv.info[subject_symbol][strategy][차트�??��][type][time_unit] = {}
+        #                 stv.info[subject_symbol][strategy][차트�???��][type][time_unit] = {}
         #                 stv.info[subject_symbol][strategy][차트].append( [ str(type), str(time_unit) ] )
         #                 if strategy == ?��?��:
-        #                     stv.info[subject_symbol][strategy][차트�??��][type][time_unit][?��?��?��균선] = json.loads(config.get(section_str, ?��?��?��균선))
-        #                     stv.info[subject_symbol][strategy][차트�??��][type][time_unit][INIT_AF] = config.getfloat(section_str, INIT_AF)
-        #                     stv.info[subject_symbol][strategy][차트�??��][type][time_unit][MAX_AF] = config.getfloat(section_str, MAX_AF)
-        #                     stv.info[subject_symbol][strategy][차트�??��][type][time_unit][초기캔들?��] = config.getint(section_str, 초기캔들?��)
+        #                     stv.info[subject_symbol][strategy][차트�???��][type][time_unit][?��?��?��균선] = json.loads(config.get(section_str, ?��?��?��균선))
+        #                     stv.info[subject_symbol][strategy][차트�???��][type][time_unit][INIT_AF] = config.getfloat(section_str, INIT_AF)
+        #                     stv.info[subject_symbol][strategy][차트�???��][type][time_unit][MAX_AF] = config.getfloat(section_str, MAX_AF)
+        #                     stv.info[subject_symbol][strategy][차트�???��][type][time_unit][초기캔들?��] = config.getint(section_str, 초기캔들?��)
         #
         #
         #     except Exception as err:
@@ -107,7 +107,7 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #             pass
         #         else:
         #             err_log.error('%s 종목, ?��?�� ?��?�� ?��?��' % subject_code)
-        #             return {'?��규주�?': False}
+        #             return {'?��규주�??': False}
         #
         #     except Exception as err:
         #         err_log.error(log_manager.get_error_msg(err))
@@ -116,4 +116,4 @@ class BaseStrategy(metaclass=abc.ABCMeta):
         #     pass
 
     def init_logger(self):
-        self.log, self.res, self.err_log = log_manager().LogManager.__call__().get_logger()
+        self.log, self.res, self.err_log = log_manager().LogManager.get_logger()

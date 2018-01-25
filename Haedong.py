@@ -1,31 +1,31 @@
 # -*- coding: utf-8 -*-
 
-import sys, time
-from modules import kiwoom, health_server, destroy_python
-from constant import constant as const
-from simulate import tester
-from manager.log_manager import LogManager
+import sys
 
+from constant import const
+from manager import log_manager
+from modules import kiwoom, health_server, destroy_python
+from simulate import tester
+
+
+# import time
 # import simulate.tester as tester
 # import constant.constant_ as const
 # import modules.kiwoom as kiwoom
 # import modules.health_server as health_server
-
 # from manager.log_manager import LogManager
 # import strategy.para as para
 # import chart_manager as chart
-
-
 class Haedong(object):
     running_time = 0
     log, res, err_log = None, None, None
 
     def __init__(self):
         super(Haedong, self).__init__()
-        self.log, self.res, self.err_log = LogManager().get_logger()
+        self.log, self.res, self.err_log = log_manager.LogManager().get_logger()
 
     def run(self):
-        s_time = time.time()
+#         s_time = time.time()
 
         while True:
             if len(sys.argv) == 1:

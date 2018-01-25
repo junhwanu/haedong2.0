@@ -6,10 +6,10 @@ import time
 
 import pywinauto
 from pywinauto.findwindows import ElementNotFoundError
-from manager.__manager import ManagerClass
+from modules import __module
 
 
-class ClosePopup(ManagerClass, threading.Thread):
+class ClosePopup(__module.ModuleClass, threading.Thread):
     time = 0
     
     def __init__(self, time__):

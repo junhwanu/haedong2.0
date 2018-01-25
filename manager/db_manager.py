@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import pymysql
-from constant.constant import *
-from manager import __manager
+
+from constant import const
+from manager import __manager 
 
 
 class DBManager(__manager.ManagerClass):
@@ -13,31 +14,31 @@ class DBManager(__manager.ManagerClass):
         super(DBManager, self).__init__()
 
     def connect(self):
-        self.conn = pymysql.connect(host=DB_SERVER_ADDR, user=DB_USER_ID, password=DB_USER_PWD, db=DB_NAME, charset=DB_CHARSET)
+        self.conn = pymysql.connect(host=const.DB_SERVER_ADDR, user=const.DB_USER_ID, password=const.DB_USER_PWD, db=const.DB_NAME, charset=const.DB_CHARSET)
         self.curs = self.conn.cursor()
         self.is_connected = True
 
     def disconnect(self):
         self.conn.close()
 
-    def exec_query(self, query, fetch_type=None, fetch_count=None, cursor_type=CURSOR_TUPLE):
+    def exec_query(self, query, fetch_type=None, fetch_count=None, cursor_type=const.CURSOR_TUPLE):
         if not self.is_connected:
             self.connect()
 
-        if cursor_type == CURSOR_DICT:
+        if cursor_type == const.CURSOR_DICT:
             self.curs = self.conn.cursor(pymysql.cursors.DictCursor)
-        elif cursor_type == CURSOR_TUPLE:
+        elif cursor_type == const.CURSOR_TUPLE:
             self.curs = self.conn.cursor()
 
         result = self.curs.execute(query)
         self.conn.commit()
         print(query)
 
-        if fetch_type == FETCH_ONE:
+        if fetch_type == const.FETCH_ONE:
             return self.curs.fetchone()
-        elif fetch_type == FETCH_ALL:
+        elif fetch_type == const.FETCH_ALL:
             return self.curs.fetchall()
-        elif fetch_type == FETCH_MANY:
+        elif fetch_type == const.FETCH_MANY:
             return self.curs.fetchmany(fetch_count)
         else:
             return result
@@ -45,7 +46,7 @@ class DBManager(__manager.ManagerClass):
     def exist_table(self, subject_code, date):
         query = "show tables in haedong like '%s_%s'" % (subject_code, date)
 
-        row = self.exec_query(query, FETCH_ONE)
+        row = self.exec_query(query, const.FETCH_ONE)
 
         if len(row) > 0:
             return True
@@ -64,7 +65,7 @@ class DBManager(__manager.ManagerClass):
         if start_date is not None: query = 'select date, price, working_day from %s' % table_name
         else: query = "select date, price, working_day from %s where date >= timestamp('%s') and date = timestamp('%s')" % (table_name, start_date, end_date)
 
-        return self.exec_query(query, FETCH_ALL)
+        return self.exec_query(query, const.FETCH_ALL)
 
     def get_table_list(self, subject_symbol):
         query = '''
@@ -77,7 +78,7 @@ class DBManager(__manager.ManagerClass):
          and
          substr(table_name, 1, %s) = '%s'
         ''' %  (len(subject_symbol), subject_symbol)
-        return list(self.exec_query(query, FETCH_ALL))
+        return list(self.exec_query(query, const.FETCH_ALL))
 
     def get_name(self):
         return str(self.__class__.__name__)
@@ -104,7 +105,7 @@ class DBManager(__manager.ManagerClass):
         ORDER BY date
         ''' % (sec, sec, subject_code, start_date, end_date, sec)
 
-        return self.exec_query(query, fetch_type=FETCH_ALL, cursor_type=CURSOR_DICT)
+        return self.exec_query(query, fetch_type=const.FETCH_ALL, cursor_type=const.CURSOR_DICT)
 
     def request_tick_candle(self, subject_code, tick_unit, start_date='20170101', end_date='20201231'):
         query = '''
@@ -143,7 +144,7 @@ class DBManager(__manager.ManagerClass):
         ;
         ''' % (tick_unit, subject_code, start_date[:4], start_date[4:6], start_date[6:], end_date[:4], end_date[4:6], end_date[6:], tick_unit, subject_code, subject_code)
 
-        return self.exec_query(query, fetch_type=FETCH_ALL, cursor_type=CURSOR_DICT)
+        return self.exec_query(query, fetch_type=const.FETCH_ALL, cursor_type=const.CURSOR_DICT)
 
     def print_status(self):
         print(self.__getattribute__())
@@ -159,7 +160,7 @@ class DBManager(__manager.ManagerClass):
         ''' % (table_name, table_name)
 
         try:
-            result = self.exec_query(query, fetch_type=FETCH_ONE, cursor_type=CURSOR_DICT)
+            result = self.exec_query(query, fetch_type=const.FETCH_ONE, cursor_type=const.CURSOR_DICT)
 
             c = c[:4] + '-' + c[4:6] + '-' + c[6:]
             d = d[:4] + '-' + d[4:6] + '-' + d[6:]

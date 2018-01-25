@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import telepot
-from utils.singleton import Singleton
+from utils import singleton
 
 # Singleton class --> there is only one log manager
-class TelepotManager(metaclass=Singleton):
+class TelepotManager(metaclass=singleton.Singleton):
     TOKEN = '339704326:AAEXoMPlPLsuA5uMqdCUF-Wq5QMyKqNsgYo'
     id_list = []
     

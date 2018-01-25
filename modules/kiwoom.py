@@ -4,17 +4,15 @@ import threading
 import time
 
 from PyQt5 import QAxContainer, QtWidgets
-from modules import auto_login, close_popup
+from modules import auto_login, close_popup, __module
 from manager import chart_manager, contract_manager, strategy_manager
-from constant import screen
-from constant import constant as const
+from constant import screen, const
 from var import subject
-from var import *
+# from var import *
 from utils import util
-from modules.__module import ModuleClass
 
 
-class Api(ModuleClass):
+class Api(__module.ModuleClass):
     req = []
     input_value = []
     last_req_time = time.time()

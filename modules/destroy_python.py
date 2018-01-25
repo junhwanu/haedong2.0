@@ -4,11 +4,10 @@ import os
 
 import psutil
 import pywinauto
+from modules import __module
 
-from modules.__module import ModuleClass
 
-
-class Destroy_python(ModuleClass):
+class Destroy_python(__module.ModuleClass):
     my_pid = 0
     
     MODULE_PATH = os.path.dirname(os.path.abspath(__file__).replace('\\', '/'))

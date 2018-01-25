@@ -4,13 +4,12 @@ import logging
 import os
 import time
 
-from constant import constant as const
-from utils.singleton import Singleton
+from constant import const
+from utils import singleton
 
 
 # Singleton class --> there is only one log manager
-
-class LogManager(metaclass=Singleton):
+class LogManager(metaclass=singleton.Singleton):
     res_logger, info_logger, err_logger = None, None, None
     
     def __init__(self):

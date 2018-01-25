@@ -3,7 +3,7 @@
 class Strategy_Var():
     '''
     info = {
-        "GCZ17" : {
+        "GC" : {
             파라 : {
                 "차트": [
                     [틱차트, "60"],

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-from constant import constant as const
+from constant import const
 # from strategy import para
 from utils import util
 from var import subject
-from manager.__manager import ManagerClass
+from manager import __manager
 
 
 SAFE = '목표달성청산'
@@ -11,7 +11,7 @@ DRIBBLE = '드리블'
 ALL = '전체'
 
 
-class ContractManager(ManagerClass):
+class ContractManager(__manager.ManagerClass):
     contract_list = {}
 
     '''
@@ -153,7 +153,7 @@ class ContractManager(ManagerClass):
 
         return self.contract_list[subject_code]
 
-    def get_loss_cut(strategy):
+    def get_loss_cut(self, strategy):
         # return [익절가], [손절가]
         if strategy == const.파라:
             return [const.INFINITY, 77, 300], [50, const.ZERO, const.ZERO]
@@ -163,4 +163,3 @@ class ContractManager(ManagerClass):
 
     def print_status(self):
         print(self.__getattribute__())
-

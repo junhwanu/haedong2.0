@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import time
 
-from constant import constant as const
+from constant import const
 # from var import subject, strategy_var as stv
 from utils import util
-from manager.__manager import ManagerClass
+from manager import __manager
 
-class ChartManger(ManagerClass):
+class ChartManger(__manager.ManagerClass):
     
     data = {}
     stv = None
@@ -88,7 +88,9 @@ class ChartManger(ManagerClass):
                         self.data[subject_code][chart_type][time_unit]['일목균형표']['기준선'] = []
                         self.data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'] = []
                         self.data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'] = []
-                        for index in range(0, 26):
+                        
+                        for i in range(0, 26):
+                            i
                             self.data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬1'].append(None)
                             self.data[subject_code][chart_type][time_unit]['일목균형표']['선행스팬2'].append(None)
 
@@ -157,6 +159,7 @@ class ChartManger(ManagerClass):
 
     def calc_common_data(self, subject_code, chart_type, time_unit):
         for idx in range(0, len(self.data[subject_code][chart_type][time_unit])):
+            idx
             pass
         pass
 

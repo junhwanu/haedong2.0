@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from constant import screen
-from constant.constant import *
+from constant import const, screen
+
 
 class Subject():
     info = {
-        "GCZ17" : {
+        "GC" : {
             "종목명": "GOLD",
             "단위": 0.1,
             "자릿수": 1,
@@ -13,6 +13,6 @@ class Subject():
             "화면번호": screen.S9998,
             "마감시간": '0600',
             "시작시간": '0700',
-            "전략" : 파라
+            "전략" : const.파라
         }
     }

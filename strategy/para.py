@@ -1,19 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import time
-from strategy import __base_strategy
-from constant import constant as const
+
+from constant import const
+from strategy import __base_strategy 
 from utils import util
 
 
-# class Para(__base_strategy.BaseStrategy):
-class Para():
+class Para(__base_strategy.BaseStrategy):
+# class Para():
     running_time = 0
     
     def __init__(self, stv, sbv, chart):
         self.stv = stv
         self.sbv = sbv
         self.chart = chart
+#         print(self.stv.info)
+#         print(self.sbv)
+#         print(self.chart)
+        
 
     
     def is_it_ok(self, subject_code, current_price):
@@ -21,10 +26,10 @@ class Para():
         global running_time
         s_time = time.time()
         #try:
-        차트 = self.get_chart(self.chart, subject_code) # 이거 왜 쓴거임?
+        temp_chart = self.get_chart(subject_code) # 이거 왜 쓴거임?
 
         ''' 차트 미생성 '''
-        for chart_config in self.stv.info[subject_code][const.파라][차트]:
+        for chart_config in self.stv.info[subject_code][const.파라][const.차트]:
             chart_type = chart_config[0]
             time_unit = chart_config[1]
 
@@ -39,7 +44,7 @@ class Para():
             running_time = running_time + (time.time() - s_time)
             return const.false
 
-        매도수구분 = self.get_mesu_medo_type(subject_code, current_price, 차트[0])
+        매도수구분 = self.get_mesu_medo_type(subject_code, current_price, temp_chart[0])
 
         if not (매도수구분 == const.매수 or 매도수구분 == const.매도):
             running_time = running_time + (time.time() - s_time)
@@ -160,15 +165,12 @@ class Para():
             running_time = running_time + (time.time() - s_time)
             return const.false
 
-    def get_chart(self, chart, subject_code):
-        차트 = []
-        for 차트변수 in self.stv.info[subject_code][const.파라][차트]:
-            차트타입 = 차트변수[0]
-            시간단위 = 차트변수[1]
-    
-            차트.append(chart.data[subject_code][차트타입][시간단위])
-    
-        return 차트
+    def get_chart(self, subject_code):
+        temp_chart = []
+#         print(self.stv.info)
+        for 차트변수 in self.stv.info[subject_code][const.파라][const.차트]:
+            temp_chart.append(self.chart.data[subject_code][차트변수[0]][차트변수[1]])
+        return temp_chart
 
     def get_mesu_medo_type(self, subject_code, 현재가, 차트):
         try:
@@ -254,5 +256,9 @@ class Para():
         pass
 
     def check_contract_in_tick(self, current_price):
+        # TODO
+        pass
+
+    def set_strategy_var(self):
         # TODO
         pass

@@ -3,20 +3,20 @@ import configparser
 import json
 import os
 
-from constant import constant as const
+from constant import const
+from manager import __manager
 from strategy import para
 from utils import util
-from var import strategy_var as stv
-
-from manager.__manager import ManagerClass
 
 
-class StrategyManager(ManagerClass):
-
-    stv = stv.Strategy_Var()
+# from var import strategy_var as stv
+class StrategyManager(__manager.ManagerClass):
+    stv = None
     strategys = {}
+    
     def __init__(self, stv, sbv, chart):
         super(StrategyManager, self).__init__()
+        print(stv.info)
         self.sbv = sbv
         self.chart = chart
 
@@ -79,9 +79,10 @@ class StrategyManager(ManagerClass):
         stv = self.stv
         sbv = self.sbv
         chart = self.chart
-
+        
         if self.sbv.info[subject_code][const.전략] == const.파라:
             if const.파라 not in self.strategys.keys():
+                
                 self.strategys[const.파라] = para.Para(stv, sbv, chart)
                 return self.strategys[const.파라]
             else: return self.strategys[const.파라]
