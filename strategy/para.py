@@ -8,18 +8,13 @@ from utils import util
 
 
 class Para(__base_strategy.BaseStrategy):
-# class Para():
     running_time = 0
     
     def __init__(self, stv, sbv, chart):
+        super(Para, self).__init__()
         self.stv = stv
         self.sbv = sbv
         self.chart = chart
-#         print(self.stv.info)
-#         print(self.sbv)
-#         print(self.chart)
-        
-
     
     def is_it_ok(self, subject_code, current_price):
         s_time = time.time()
@@ -35,14 +30,17 @@ class Para(__base_strategy.BaseStrategy):
                 self.running_time = self.running_time + (time.time() - s_time)
                 return const.false
 
-
         ''' 매매 불가 상태'''
         if self.chart.data[subject_code]['상태'] == '매수중' or self.chart.data[subject_code]['상태'] == '매도중' \
                 or self.chart.data[subject_code]['상태'] == '매매시도중' or self.chart.data[subject_code]['상태'] == '청산시도중':
             self.running_time = self.running_time + (time.time() - s_time)
             return const.false
 
+        print("temp_chart[0]" + str(temp_chart[0]))
+
         매도수구분 = self.get_mesu_medo_type(subject_code, current_price, temp_chart[0])
+
+        print("매도수구분" + str(매도수구분))
 
         if not (매도수구분 == const.매수 or 매도수구분 == const.매도):
             self.running_time = self.running_time + (time.time() - s_time)
@@ -169,23 +167,24 @@ class Para(__base_strategy.BaseStrategy):
         return temp_chart
 
     def get_mesu_medo_type(self, subject_code, 현재가, 차트):
+        print("차트 : " + str(차트))
         try:
-            차트변수 = self.stv.info[subject_code][const.파라]['차트변수']
-            차트타입 = 차트['차트타입']
-            시간단위 = 차트['시간단위']
+            차트변수 = self.stv.info[subject_code][const.파라][const.차트변수]
+            차트타입 = 차트[const.차트타입]
+            시간단위 = 차트[const.시간단위]
             매도수구분 = const.매매없음
-            현재플로우 = 차트['현재플로우']
-            지난플로우 = 차트['지난플로우'][-5:]
+            현재플로우 = 차트[const.현재플로우]
+            지난플로우 = 차트[const.현재플로우][:5]
     
             i = 차트['인덱스']
 
-            if (현재플로우 == const.상향 and 차트['플로우'][-1] != 차트['플로우'][-2]) or \
+            if (현재플로우 == const.상향 and 차트[const.플로우][-1] != 차트[const.플로우][-2]) or \
                     (현재플로우 == const.하향 and 현재가 > 차트[const.현재SAR]):
                 매도수구분 = const.매수
-                차트['현재플로우'] = const.상향  # 현재 플로우 즉시 반영
+                차트[const.현재플로우] = const.상향  # 현재 플로우 즉시 반영
                 차트[const.현재SAR] = const.ZERO
     
-            elif (현재플로우 == const.하향 and 차트['플로우'][-1] != 차트['플로우'][-2]) or \
+            elif (현재플로우 == const.하향 and 차트[const.플로우][-1] != 차트[const.플로우][-2]) or \
                     (현재플로우 == const.상향 and 현재가 < 차트[const.현재SAR]):
                 매도수구분 = const.매도
                 차트['현재플로우'] = const.하향  # 현재 플로우 즉시 반영
@@ -193,13 +192,14 @@ class Para(__base_strategy.BaseStrategy):
     
     
             ''' 반전시 매매'''
-            if (차트['현재플로우'] == const.상향 and util.is_sorted(subject_code, 차트타입, 시간단위) != const.상승세) or \
-                    (차트['현재플로우'] == const.하향 and util.is_sorted(subject_code, 차트타입, 시간단위) != const.하락세):
+            if (차트['현재플로우'] == const.상향 and util.is_sorted(self.chart, self.stv, subject_code, 차트타입, 시간단위) != const.상승세) or \
+                    (차트['현재플로우'] == const.하향 and util.is_sorted(self.chart, self.stv, subject_code, 차트타입, 시간단위) != const.하락세):
                 ''' 이동평균선 안맞을 시 매매 안함 '''
                 self.log.debug('이동평균선 방향이 현재 플로우와 맞지 않아 매매 안함.')
                 return const.매매없음
     
             ''' 이전 플로우 수익이 매매불가수익량 이상일 때 매매 안함 '''
+
             if (지난플로우[0][const.추세] == const.상향 and (지난플로우[0][const.마지막SAR] - 지난플로우[0][const.시작SAR])*self.sbv.info[subject_code]['틱가치'] >= 차트변수[const.매매불가수익량]) or \
                 (지난플로우[0][const.추세] == const.하향 and (지난플로우[0][const.시작SAR] - 지난플로우[0][const.마지막SAR])*self.sbv.info[subject_code]['틱가치'] >= 차트변수[const.매매불가수익량]):
                 self.log.debug("이전 플로우 수익이 %s틱 이상이므로 현재 플로우는 넘어갑니다." % 차트변수[const.매매불가수익량])
@@ -215,10 +215,10 @@ class Para(__base_strategy.BaseStrategy):
                     맞틀리스트.append(const.틀)
     
     
-            if 차트['현재플로우'] != 차트['플로우']:
+            if 차트['현재플로우'] != 차트[const.플로우]:
                 ''' 반전되었으나, 캔들이 완성되지 않아 아직 SAR 계산은 이루어지지 않음 '''
-                if (차트['플로우'][-1] == const.상향 and (현재가 - 차트['SAR'][-1]) > 0) \
-                    or (차트['플로우'][-1] == const.하향 and (현재가 - 차트['SAR'][-1]) < 0):
+                if (차트[const.플로우][-1] == const.상향 and (현재가 - 차트[const.SAR][-1]) > 0) \
+                    or (차트[const.플로우][-1] == const.하향 and (현재가 - 차트[const.SAR][-1]) < 0):
                     맞틀리스트.append(const.맞)
                 else: 맞틀리스트.append(const.틀)
     

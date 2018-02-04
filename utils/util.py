@@ -47,17 +47,18 @@ def get_time(chart_manager, strategy_var, add_min, subject_code):
 
     return int(current_time)
 
+
 def is_sorted(chart_manager, strategy_var, subject_code, chart_type, time_unit):
-    lst = strategy_var.info[subject_code][const.파라]['차트변수'][chart_type][time_unit]['이동평균선']
+    lst = strategy_var.info[subject_code][const.파라][const.차트변수][chart_type][time_unit][const.이동평균선]
     차트 = chart_manager.data[subject_code][chart_type][time_unit]
 
-    if max(lst) - 1 > 차트['인덱스']:
+    if max(lst) - 1 > 차트[const.인덱스]:
         return '모름'
 
     lst_real = []
     lst_tmp = []
     for days in lst:
-        lst_real.append(차트['이동평균선'][days][차트['인덱스']])
+        lst_real.append(차트[const.이동평균선][days][차트[const.인덱스]])
 
     lst_tmp = lst_real[:]
     lst_tmp.sort()

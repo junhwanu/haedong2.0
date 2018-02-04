@@ -54,10 +54,10 @@ class KiwoomTester(__module.ModuleClass):
 
         if 인덱스 < 500: return const.false
 
-        sar = 차트['SAR'][-1]
-        플로우 = 차트['플로우'][-1]
-        자릿수 = self.sbv.info[종목코드]['자릿수'] # 금의 경우 1
-        단위 = self.sbv.info[종목코드]['단위']     # 금의 경우 0.1
+        sar = 차트[const.SAR][-1]
+        플로우 = 차트[const.플로우][-1]
+        자릿수 = self.sbv.info[종목코드][const.자릿수] # 금의 경우 1
+        단위 = self.sbv.info[종목코드][const.단위]     # 금의 경우 0.1
 
 #         self.log.info("인덱스 : %s, SARz : %s" % (인덱스, sar))
 
@@ -86,7 +86,7 @@ class KiwoomTester(__module.ModuleClass):
         # 이후 여러종목 동시테스트일 경우에는 캔들의 시간이 빠른순으로 넣어줘야함. 같은 종목도 차트타입과 시간단위도 마찬가지로 차트가 여러개일 경우엔
         for i in range(0, len(self.chart.data[subject_code][chart_type][time_unit][const.현재가])):
             self.check_contract_in_candle(subject_code, chart_type, time_unit, i)
-            self.chart.data[subject_code][chart_type][time_unit]['인덱스'] += 1
+            self.chart.data[subject_code][chart_type][time_unit][const.인덱스] += 1
             self.chart.calc(subject_code, chart_type, time_unit)
         #except Exception as err:
         #    self.log.error(err)
